@@ -99,14 +99,14 @@
     background:var(--card);border:1px solid var(--line);border-radius:14px;padding:18px 22px;display:none;
     box-shadow:0 12px 34px rgba(0,0,0,.08)}
   #cap.show{display:block}
-  #cap .st{display:flex;justify-content:space-between;align-items:center;margin-bottom:8px}
+  #cap .st{display:flex;align-items:baseline;gap:8px;margin-bottom:8px;padding-right:80px}
   #cap .st b{font-size:11px;letter-spacing:.18em;color:var(--green)}
-  #cap .st span{font-size:11px;color:var(--ink-3)}
+  #cap .st span{font-size:11px;color:var(--ink-3);letter-spacing:.08em}
   #cap h4{margin:0 0 6px;font-size:18px;font-weight:600;letter-spacing:-.015em}
   #cap p{margin:0;font-size:13.5px;line-height:1.6;color:var(--ink-2)}
   #cap .bar{height:3px;background:var(--paper-2);border-radius:2px;margin-top:14px;overflow:hidden}
   #cap .bar i{display:block;height:100%;background:var(--green);width:0;transition:width .3s}
-  #cap .nav{display:flex;gap:6px;position:absolute;top:14px;right:16px}
+  #cap .nav{display:flex;gap:6px;position:absolute;top:16px;right:18px}
   #cap .nav button{width:28px;height:28px;border-radius:7px;border:1px solid var(--line);background:none;color:var(--ink-2);cursor:pointer}
   #cap .nav button:hover{color:var(--ink);background:var(--paper-2)}
 
@@ -164,6 +164,10 @@
   <div class="block" id="buildBlock" style="display:none">
     <div class="rowlbl"><span>Build step</span><b id="stepv">0 / 12</b></div>
     <input type="range" id="stepr" min="0" max="12" value="0" step="0.01">
+  </div>
+  <div class="block">
+    <div class="rowlbl"><span>Zoom</span><b id="zoomv">1.0×</b></div>
+    <input type="range" id="zoom" min="0" max="100" value="38">
   </div>
   <div class="block">
     <p class="sect mono">SHOW</p>
@@ -637,7 +641,7 @@ cv2.addEventListener('pointermove',function(e){ if(!drag)return; var ddx=e.clien
   if(pan){var rt=new THREE.Vector3().setFromMatrixColumn(camera.matrix,0),up=new THREE.Vector3().setFromMatrixColumn(camera.matrix,1);
     aim.t.addScaledVector(rt,-ddx*cur.r*.0009); aim.t.addScaledVector(up,ddy*cur.r*.0009);}
   else{aim.th-=ddx*.0034; aim.ph-=ddy*.0034; aim.ph=Math.max(.08,Math.min(Math.PI-.08,aim.ph));} });
-cv2.addEventListener('wheel',function(e){e.preventDefault();var st=Math.max(-1,Math.min(1,e.deltaY/100))*.055;aim.r=Math.max(330,Math.min(3400,aim.r*(1+st)));},{passive:false});
+cv2.addEventListener('wheel',function(e){e.preventDefault();var st=Math.max(-1,Math.min(1,e.deltaY/100))*.055;aim.r=Math.max(330,Math.min(3400,aim.r*(1+st))); syncZoom();},{passive:false});
 cv2.addEventListener('contextmenu',function(e){e.preventDefault();});
 
 /* ============ SELECTION + CONNECTION TRACE ============ */
@@ -705,7 +709,7 @@ playBtn.addEventListener('click',function(){
   if(buildAim>=NSTEP-.01){buildAim=0;build=0;}
   playing=!playing; playT=0;
   playBtn.textContent=playing?'Pause':'Play the build'; playBtn.classList.toggle('stop',playing);
-  if(playing){aim.r=1250;aim.th=.78;aim.ph=1.1;aim.t.set(0,-10,0);}
+  if(playing){aim.r=1250;aim.th=.78;aim.ph=1.1;aim.t.set(0,-10,0); syncZoom();}
 });
 document.getElementById('nextS').addEventListener('click',function(){buildAim=Math.min(NSTEP,Math.floor(buildAim+1.001));playing=false;});
 document.getElementById('prevS').addEventListener('click',function(){buildAim=Math.max(0,Math.ceil(buildAim-1.001));playing=false;});
@@ -713,6 +717,13 @@ document.getElementById('prevS').addEventListener('click',function(){buildAim=Ma
 ['cProps','props','cBatt','battery','cPay','payload','cKit','kit'].forEach(function(v,i,arr){ if(i%2)return;
   document.getElementById(v).addEventListener('change',function(e){show(arr[i+1],e.target.checked);}); });
 document.getElementById('cWires').addEventListener('change',function(e){wireG.visible=e.target.checked;});
+var ZMIN=330, ZMAX=3400, zoomEl=document.getElementById('zoom'), zoomV=document.getElementById('zoomv');
+function zoomToR(v){ return ZMIN*Math.pow(ZMAX/ZMIN, v/100); }
+function rToZoom(r){ return 100*Math.log(r/ZMIN)/Math.log(ZMAX/ZMIN); }
+function zoomLabel(r){ zoomV.textContent=(1360/r).toFixed(1)+'×'; }
+zoomEl.addEventListener('input',function(){ aim.r=zoomToR(100-(+zoomEl.value)); zoomLabel(aim.r); });
+function syncZoom(){ zoomEl.value=100-rToZoom(aim.r); zoomLabel(aim.r); }
+syncZoom();
 document.getElementById('cSpin').addEventListener('change',function(e){spin=e.target.checked;});
 document.getElementById('cPoints').addEventListener('change',function(e){spotLayer.style.display=e.target.checked?'block':'none';});
 
@@ -720,7 +731,7 @@ var VIEW={iso:{r:1360,th:.78,ph:1.14,t:[0,-10,0]},top:{r:1150,th:-Math.PI/2,ph:.
   stack:{r:430,th:.62,ph:.95,t:[0,40,0]},arm:{r:400,th:.6,ph:1.05,t:[210,22,210]},under:{r:900,th:.9,ph:2.25,t:[0,-60,0]},
   kit:{r:820,th:1.2,ph:1.0,t:[20,KY+20,KZ]},power:{r:520,th:2.3,ph:1.35,t:[-20,-40,20]}};
 document.querySelectorAll('.vbtns button').forEach(function(b){b.addEventListener('click',function(){var v=VIEW[b.dataset.v];
-  aim.r=v.r;aim.th=v.th;aim.ph=v.ph;aim.t.set(v.t[0],v.t[1],v.t[2]);
+  aim.r=v.r;aim.th=v.th;aim.ph=v.ph;aim.t.set(v.t[0],v.t[1],v.t[2]); syncZoom();
   if(b.dataset.v==='power'){pick(BYID.pm08);} });});
 
 /* ============ LOOP ============ */
