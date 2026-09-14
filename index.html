@@ -9,124 +9,119 @@
 <link href="https://fonts.googleapis.com/css2?family=Archivo:wdth,wght@62..125,400;62..125,500;62..125,600;62..125,700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
 <style>
   :root{
-    --paper:#f2f1ec; --paper-2:#e9e8e1; --card:#ffffff;
-    --ink:#1b1e1c; --ink-2:#5c625e; --ink-3:#9aa09b;
-    --line:#dcdbd3; --green:#1f6b52; --green-2:#15503d;
-    --amber:#b07d2a; --rust:#a8492f;
+    --paper:#f1f0eb;--paper-2:#e8e7e0;--card:#fff;
+    --ink:#1b1e1c;--ink-2:#5b615d;--ink-3:#989e99;--line:#dbdad2;
+    --green:#1f6b52;--green-2:#15503d;--amber:#b07d2a;--rust:#a8492f;--violet:#5f6396;
   }
   *{box-sizing:border-box}
   html,body{margin:0;height:100%;overflow:hidden;background:var(--paper);color:var(--ink);
     font-family:"Archivo",system-ui,sans-serif;font-size:16px;-webkit-font-smoothing:antialiased}
-  #app{position:fixed;inset:0}
-  canvas{display:block}
+  #app{position:fixed;inset:0} canvas{display:block}
   .mono{font-family:"JetBrains Mono",ui-monospace,monospace}
+  button{font-family:inherit}
 
-  /* ---------- top bar ---------- */
-  header{position:absolute;top:0;left:0;right:0;z-index:6;padding:20px 30px 18px;
-    display:flex;justify-content:space-between;align-items:center;
-    border-bottom:1px solid var(--line);background:rgba(242,241,236,.9);backdrop-filter:blur(10px)}
-  .logo{font-size:20px;font-weight:700;letter-spacing:-.02em}
-  .logo span{color:var(--ink-3);font-weight:400}
+  header{position:absolute;top:0;left:0;right:0;z-index:6;padding:18px 30px 16px;display:flex;
+    justify-content:space-between;align-items:center;border-bottom:1px solid var(--line);
+    background:rgba(241,240,235,.9);backdrop-filter:blur(10px)}
+  .logo{font-size:20px;font-weight:700;letter-spacing:-.02em}.logo span{color:var(--ink-3);font-weight:400}
   .eyebrow{margin-left:26px;font-size:11px;letter-spacing:.22em;color:var(--ink-3)}
-  .chip{font-size:12px;color:var(--green);border:1px solid rgba(31,107,82,.3);
-    border-radius:7px;padding:7px 13px;background:rgba(31,107,82,.05)}
+  .chip{font-size:12px;color:var(--green);border:1px solid rgba(31,107,82,.3);border-radius:7px;
+    padding:7px 13px;background:rgba(31,107,82,.05)}
 
-  /* ---------- left copy ---------- */
-  #intro{position:absolute;left:30px;top:118px;width:300px;z-index:5;pointer-events:none}
-  .kicker{font-size:11px;letter-spacing:.2em;color:var(--green);margin-bottom:16px}
-  #intro h1{margin:0 0 20px;font-size:clamp(38px,4.2vw,58px);line-height:1.02;
-    letter-spacing:-.035em;font-weight:500}
+  #intro{position:absolute;left:30px;top:112px;width:300px;z-index:5}
+  .kicker{font-size:11px;letter-spacing:.2em;color:var(--green);margin-bottom:14px}
+  #intro h1{margin:0 0 18px;font-size:clamp(36px,4vw,56px);line-height:1.02;letter-spacing:-.035em;font-weight:500}
   #intro h1 b{font-weight:700}
   #intro p{margin:0;font-size:14.5px;line-height:1.65;color:var(--ink-2);max-width:33ch}
-  .figs{display:flex;gap:34px;margin-top:30px;padding-top:22px;border-top:1px solid var(--line)}
-  .fig b{display:block;font-size:30px;font-weight:600;letter-spacing:-.02em;line-height:1}
+  .play{margin-top:22px;padding:13px 22px;border:0;border-radius:8px;background:var(--green);color:#fff;
+    font-size:14.5px;font-weight:500;cursor:pointer;transition:.18s}
+  .play:hover{background:var(--green-2)} .play.stop{background:var(--ink)}
+  .figs{display:flex;gap:30px;margin-top:26px;padding-top:20px;border-top:1px solid var(--line)}
+  .fig b{display:block;font-size:28px;font-weight:600;letter-spacing:-.02em;line-height:1}
   .fig span{display:block;font-size:9.5px;letter-spacing:.14em;color:var(--ink-3);margin-top:7px}
 
-  /* ---------- right panel ---------- */
-  #side{position:absolute;right:30px;top:118px;width:266px;z-index:6}
-  .sect{font-size:10px;letter-spacing:.2em;color:var(--ink-3);margin:0 0 12px}
-  .sect+.sect{margin-top:0}
-  .block{padding-bottom:22px;margin-bottom:22px;border-bottom:1px solid var(--line)}
-  .block:last-child{border-bottom:0}
-
-  .stg{display:flex;align-items:center;gap:14px;width:100%;padding:12px 14px;margin-bottom:3px;
-    border:0;background:none;border-radius:9px;cursor:pointer;text-align:left;
-    font-family:inherit;font-size:15px;color:var(--ink-2);transition:.2s}
-  .stg:hover{background:rgba(0,0,0,.035);color:var(--ink)}
-  .stg.on{background:var(--ink);color:#fff}
-  .stg i{font-style:normal;font-size:11px;color:var(--ink-3)}
-  .stg.on i{color:rgba(255,255,255,.5)}
-
+  #side{position:absolute;right:30px;top:112px;width:270px;z-index:6;max-height:calc(100% - 150px);overflow-y:auto;padding-right:2px}
+  .sect{font-size:10px;letter-spacing:.2em;color:var(--ink-3);margin:0 0 11px}
+  .block{padding-bottom:20px;margin-bottom:20px;border-bottom:1px solid var(--line)}
+  .stg{display:flex;align-items:center;gap:14px;width:100%;padding:11px 14px;margin-bottom:3px;border:0;
+    background:none;border-radius:9px;cursor:pointer;text-align:left;font-size:15px;color:var(--ink-2);transition:.2s}
+  .stg:hover{background:rgba(0,0,0,.035);color:var(--ink)} .stg.on{background:var(--ink);color:#fff}
+  .stg i{font-style:normal;font-size:11px;color:var(--ink-3)} .stg.on i{color:rgba(255,255,255,.5)}
   .rowlbl{display:flex;justify-content:space-between;font-size:12.5px;color:var(--ink-2);margin-bottom:8px}
   .rowlbl b{color:var(--ink);font-weight:500}
-  input[type=range]{width:100%;accent-color:var(--green);height:3px}
-
-  .checks{display:grid;grid-template-columns:1fr 1fr;gap:9px 14px}
+  input[type=range]{width:100%;accent-color:var(--green)}
+  .checks{display:grid;grid-template-columns:1fr 1fr;gap:9px 12px}
   .chk{display:flex;align-items:center;gap:8px;font-size:13px;color:var(--ink-2);cursor:pointer}
-  .chk:hover{color:var(--ink)}
-  .chk input{display:none}
-  .bx{width:15px;height:15px;border:1.5px solid var(--ink-3);border-radius:4px;flex:none;
-    position:relative;transition:.15s}
-  .chk input:checked + .bx{background:var(--green);border-color:var(--green)}
-  .chk input:checked + .bx::after{content:"";position:absolute;left:4.4px;top:1.4px;
-    width:4px;height:8px;border:solid #fff;border-width:0 2px 2px 0;transform:rotate(43deg)}
-
+  .chk:hover{color:var(--ink)} .chk input{display:none}
+  .bx{width:15px;height:15px;border:1.5px solid var(--ink-3);border-radius:4px;flex:none;position:relative;transition:.15s}
+  .chk input:checked+.bx{background:var(--green);border-color:var(--green)}
+  .chk input:checked+.bx::after{content:"";position:absolute;left:4.4px;top:1.4px;width:4px;height:8px;
+    border:solid #fff;border-width:0 2px 2px 0;transform:rotate(43deg)}
   .vbtns{display:grid;grid-template-columns:1fr 1fr;gap:6px}
-  .vbtns button{padding:9px 6px;border:1px solid var(--line);background:var(--card);
-    border-radius:7px;font-size:12px;color:var(--ink-2);cursor:pointer;font-family:inherit;transition:.15s}
+  .vbtns button{padding:9px 6px;border:1px solid var(--line);background:var(--card);border-radius:7px;
+    font-size:12px;color:var(--ink-2);cursor:pointer;transition:.15s}
   .vbtns button:hover{border-color:var(--ink-3);color:var(--ink)}
+  .legend{display:grid;gap:8px;font-size:12px;color:var(--ink-2)}
+  .legend div{display:flex;align-items:center;gap:10px}.legend i{width:18px;height:3px;border-radius:2px;flex:none}
 
-  .legend{display:grid;gap:9px;font-size:12px;color:var(--ink-2)}
-  .legend div{display:flex;align-items:center;gap:10px}
-  .legend i{width:18px;height:3px;border-radius:2px;flex:none}
-
-  /* ---------- hotspots ---------- */
   #spots{position:absolute;inset:0;z-index:4;pointer-events:none;overflow:hidden}
-  .spot{position:absolute;transform:translate(-50%,-50%);pointer-events:auto;cursor:pointer;
-    width:20px;height:20px;border-radius:50%;background:rgba(255,255,255,.92);
-    border:1.5px solid var(--ink-3);display:grid;place-items:center;
-    font-size:9.5px;font-weight:600;color:var(--ink-2);transition:.18s;
-    font-family:"JetBrains Mono",monospace;box-shadow:0 1px 5px rgba(0,0,0,.09)}
+  .spot{position:absolute;transform:translate(-50%,-50%);pointer-events:auto;cursor:pointer;width:20px;height:20px;
+    border-radius:50%;background:rgba(255,255,255,.93);border:1.5px solid var(--ink-3);display:grid;place-items:center;
+    font-size:9.5px;font-weight:600;color:var(--ink-2);transition:.18s;font-family:"JetBrains Mono",monospace;
+    box-shadow:0 1px 5px rgba(0,0,0,.09)}
+  .spot.k{border-color:var(--amber);color:var(--amber)}
   .spot:hover{border-color:var(--green);color:var(--green);transform:translate(-50%,-50%) scale(1.22)}
-  .spot.on{background:var(--green);border-color:var(--green);color:#fff;
-    transform:translate(-50%,-50%) scale(1.2)}
-  .spot .nm{position:absolute;left:27px;top:50%;transform:translateY(-50%);
-    white-space:nowrap;font-family:"Archivo",sans-serif;font-size:11.5px;font-weight:500;
-    color:var(--ink);background:rgba(255,255,255,.94);padding:3px 9px;border-radius:5px;
-    border:1px solid var(--line);opacity:0;transition:.18s;pointer-events:none;letter-spacing:0}
+  .spot.on{background:var(--green);border-color:var(--green);color:#fff;transform:translate(-50%,-50%) scale(1.2)}
+  .spot .nm{position:absolute;left:27px;top:50%;transform:translateY(-50%);white-space:nowrap;
+    font-family:"Archivo",sans-serif;font-size:11.5px;font-weight:500;color:var(--ink);background:rgba(255,255,255,.95);
+    padding:3px 9px;border-radius:5px;border:1px solid var(--line);opacity:0;transition:.18s;pointer-events:none}
   .spot:hover .nm,.spot.on .nm{opacity:1}
 
-  /* ---------- detail card ---------- */
-  #card{position:absolute;left:30px;bottom:30px;width:376px;z-index:7;background:var(--card);
-    border:1px solid var(--line);border-radius:15px;padding:24px;display:none;
-    box-shadow:0 14px 40px rgba(0,0,0,.09)}
+  #card{position:absolute;left:30px;bottom:30px;width:390px;z-index:7;background:var(--card);border:1px solid var(--line);
+    border-radius:15px;padding:24px;display:none;box-shadow:0 14px 40px rgba(0,0,0,.09);max-height:60vh;overflow-y:auto}
   #card.show{display:block}
   #card .cat{font-size:10px;letter-spacing:.18em;color:var(--green);margin-bottom:9px}
   #card h3{margin:0 0 3px;font-size:23px;font-weight:600;letter-spacing:-.02em}
-  #card .pn{font-size:12px;color:var(--ink-3);margin-bottom:15px}
+  #card .pn{font-size:12px;color:var(--ink-3);margin-bottom:14px}
   #card p{margin:0;font-size:14.5px;line-height:1.65;color:var(--ink-2)}
-  #card .facts{margin-top:17px;padding-top:15px;border-top:1px solid var(--line);
-    display:grid;grid-template-columns:1fr 1fr;gap:11px 18px}
-  #card .facts div span{display:block;font-size:10px;letter-spacing:.12em;color:var(--ink-3);margin-bottom:3px}
-  #card .facts div b{font-size:13px;font-weight:500}
-  #card .close{position:absolute;top:17px;right:18px;width:26px;height:26px;border-radius:7px;
-    border:1px solid var(--line);background:none;color:var(--ink-3);cursor:pointer;font-size:15px;line-height:1}
+  #card .facts{margin-top:16px;padding-top:14px;border-top:1px solid var(--line);display:grid;grid-template-columns:1fr 1fr;gap:10px 18px}
+  #card .facts span{display:block;font-size:10px;letter-spacing:.12em;color:var(--ink-3);margin-bottom:3px}
+  #card .facts b{font-size:13px;font-weight:500}
+  #card .conn{margin-top:16px;padding-top:14px;border-top:1px solid var(--line)}
+  #card .conn h4{margin:0 0 8px;font-size:10px;letter-spacing:.16em;color:var(--ink-3);font-weight:500}
+  #card .conn div{display:flex;align-items:center;gap:9px;font-size:13px;color:var(--ink-2);padding:4px 0;cursor:pointer}
+  #card .conn div:hover{color:var(--ink)} #card .conn i{width:14px;height:3px;border-radius:2px;flex:none}
+  #card .close{position:absolute;top:17px;right:18px;width:26px;height:26px;border-radius:7px;border:1px solid var(--line);
+    background:none;color:var(--ink-3);cursor:pointer;font-size:15px;line-height:1}
   #card .close:hover{color:var(--ink);background:var(--paper-2)}
 
-  footer{position:absolute;bottom:0;left:0;right:0;z-index:5;padding:16px 30px;
-    display:flex;justify-content:space-between;font-size:11px;color:var(--ink-3);pointer-events:none}
+  #cap{position:absolute;left:50%;bottom:34px;transform:translateX(-50%);width:min(560px,calc(100% - 40px));z-index:7;
+    background:var(--card);border:1px solid var(--line);border-radius:14px;padding:18px 22px;display:none;
+    box-shadow:0 12px 34px rgba(0,0,0,.08)}
+  #cap.show{display:block}
+  #cap .st{display:flex;justify-content:space-between;align-items:center;margin-bottom:8px}
+  #cap .st b{font-size:11px;letter-spacing:.18em;color:var(--green)}
+  #cap .st span{font-size:11px;color:var(--ink-3)}
+  #cap h4{margin:0 0 6px;font-size:18px;font-weight:600;letter-spacing:-.015em}
+  #cap p{margin:0;font-size:13.5px;line-height:1.6;color:var(--ink-2)}
+  #cap .bar{height:3px;background:var(--paper-2);border-radius:2px;margin-top:14px;overflow:hidden}
+  #cap .bar i{display:block;height:100%;background:var(--green);width:0;transition:width .3s}
+  #cap .nav{display:flex;gap:6px;position:absolute;top:14px;right:16px}
+  #cap .nav button{width:28px;height:28px;border-radius:7px;border:1px solid var(--line);background:none;color:var(--ink-2);cursor:pointer}
+  #cap .nav button:hover{color:var(--ink);background:var(--paper-2)}
 
-  #boot{position:absolute;inset:0;z-index:20;background:var(--paper);display:grid;place-items:center;
-    font-size:11px;letter-spacing:.2em;color:var(--ink-3);transition:opacity .6s}
-  #boot.off{opacity:0;pointer-events:none}
+  footer{position:absolute;bottom:0;left:0;right:0;z-index:5;padding:16px 30px;display:flex;justify-content:space-between;
+    font-size:11px;color:var(--ink-3);pointer-events:none}
+  #boot{position:absolute;inset:0;z-index:20;background:var(--paper);display:grid;place-items:center;font-size:11px;
+    letter-spacing:.2em;color:var(--ink-3);transition:opacity .6s}#boot.off{opacity:0;pointer-events:none}
 
   @media(max-width:1180px){#intro{display:none}}
   @media(max-width:820px){
-    #side{right:12px;left:12px;width:auto;top:auto;bottom:12px;background:rgba(255,255,255,.95);
-      border:1px solid var(--line);border-radius:14px;padding:16px;max-height:44%;overflow-y:auto}
-    #card{left:12px;right:12px;width:auto;bottom:auto;top:82px}
-    header{padding:14px 16px}.eyebrow,.chip{display:none}
-    footer{display:none}
+    #side{right:12px;left:12px;width:auto;top:auto;bottom:12px;background:rgba(255,255,255,.95);border:1px solid var(--line);
+      border-radius:14px;padding:16px;max-height:42%}
+    #card{left:12px;right:12px;width:auto;bottom:auto;top:78px;max-height:46vh}
+    #cap{bottom:auto;top:78px}
+    header{padding:14px 16px}.eyebrow,.chip{display:none}footer{display:none}
   }
 </style>
 </head>
@@ -144,11 +139,12 @@
 
 <div id="intro">
   <div class="kicker mono">FROM CRATE TO AIRCRAFT</div>
-  <h1>Know every<br><b>part</b> of it.</h1>
-  <p>A 650 mm carbon quadcopter with a Jetson companion computer. Rotate it, take it apart, and click any numbered point to learn what that piece does.</p>
+  <h1>See how it<br><b>comes together.</b></h1>
+  <p>A 650 mm carbon quadcopter with a Jetson companion computer. Play the build to watch it assemble in order, or click any numbered point to learn what that piece does and what it connects to.</p>
+  <button class="play" id="play">Play the build</button>
   <div class="figs">
     <div class="fig"><b>650</b><span class="mono">MM DIAGONAL</span></div>
-    <div class="fig"><b>4</b><span class="mono">MOTOR UNITS</span></div>
+    <div class="fig"><b>12</b><span class="mono">BUILD STEPS</span></div>
     <div class="fig"><b>3.5</b><span class="mono">KG PAYLOAD</span></div>
   </div>
 </div>
@@ -159,13 +155,16 @@
     <button class="stg on" data-stage="assembled"><i>01</i> Assembled</button>
     <button class="stg" data-stage="inside"><i>02</i> Inside</button>
     <button class="stg" data-stage="exploded"><i>03</i> Exploded</button>
+    <button class="stg" data-stage="build"><i>04</i> Build sequence</button>
   </div>
-
-  <div class="block">
+  <div class="block" id="expBlock">
     <div class="rowlbl"><span>Separation</span><b id="expv">0%</b></div>
     <input type="range" id="exp" min="0" max="100" value="0">
   </div>
-
+  <div class="block" id="buildBlock" style="display:none">
+    <div class="rowlbl"><span>Build step</span><b id="stepv">0 / 12</b></div>
+    <input type="range" id="stepr" min="0" max="12" value="0" step="0.01">
+  </div>
   <div class="block">
     <p class="sect mono">SHOW</p>
     <div class="checks">
@@ -174,29 +173,28 @@
       <label class="chk"><input type="checkbox" id="cProps" checked><span class="bx"></span>Props</label>
       <label class="chk"><input type="checkbox" id="cBatt" checked><span class="bx"></span>Battery</label>
       <label class="chk"><input type="checkbox" id="cPay" checked><span class="bx"></span>Payload</label>
+      <label class="chk"><input type="checkbox" id="cKit" checked><span class="bx"></span>Ground kit</label>
       <label class="chk"><input type="checkbox" id="cSpin"><span class="bx"></span>Rotate</label>
     </div>
   </div>
-
   <div class="block">
     <p class="sect mono">VIEW</p>
     <div class="vbtns">
-      <button data-v="iso">Perspective</button>
-      <button data-v="top">Top</button>
-      <button data-v="side">Side</button>
-      <button data-v="stack">Centre stack</button>
-      <button data-v="arm">Arm detail</button>
-      <button data-v="under">Underside</button>
+      <button data-v="iso">Perspective</button><button data-v="top">Top</button>
+      <button data-v="side">Side</button><button data-v="stack">Centre stack</button>
+      <button data-v="arm">Arm detail</button><button data-v="under">Underside</button>
+      <button data-v="kit">Ground kit</button><button data-v="power">Power path</button>
     </div>
   </div>
-
   <div class="block">
     <p class="sect mono">WIRING</p>
     <div class="legend">
       <div><i style="background:#a8492f"></i>Battery power</div>
       <div><i style="background:#1f6b52"></i>CAN bus</div>
-      <div><i style="background:#b07d2a"></i>ESC signal</div>
-      <div><i style="background:#6b6f9c"></i>USB / sensor</div>
+      <div><i style="background:#b07d2a"></i>ESC signal / PWM</div>
+      <div><i style="background:#5f6396"></i>USB / sensor data</div>
+      <div><i style="background:#2f8ba8"></i>RC / telemetry serial</div>
+      <div><i style="background:#c9a227"></i>Motor phase</div>
     </div>
   </div>
 </div>
@@ -208,702 +206,516 @@
   <div class="pn mono" id="cPn"></div>
   <p id="cDesc"></p>
   <div class="facts" id="cFacts"></div>
+  <div class="conn" id="cConn"></div>
+</div>
+
+<div id="cap">
+  <div class="nav"><button id="prevS">‹</button><button id="nextS">›</button></div>
+  <div class="st"><b class="mono" id="capStep">STEP 1</b><span class="mono" id="capOf"></span></div>
+  <h4 id="capT"></h4><p id="capP"></p>
+  <div class="bar"><i id="capBar"></i></div>
 </div>
 
 <footer>
-  <div class="mono">DRAG TO ORBIT · SCROLL TO ZOOM · RIGHT-DRAG TO PAN</div>
-  <div class="mono">v0.2 · HOLYBRO X650 · THREE.JS</div>
+  <div class="mono">DRAG TO ORBIT · SCROLL TO ZOOM · RIGHT-DRAG TO PAN · CLICK A PART TO TRACE ITS CABLES</div>
+  <div class="mono">v0.3 · HOLYBRO X650 · THREE.JS</div>
 </footer>
-
 <div id="boot" class="mono">BUILDING ASSEMBLY…</div>
 
 <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
 <script>
 (function(){
 "use strict";
+/* X650 assembly study · mm · Y up · +X nose */
 
-/* ===========================================================
-   X650 · assembly study
-   Millimetres. Y up. +X is the nose.
-   Geometry follows the Holybro X650 dev kit and the aircraft
-   held by the ORU Computing & Mathematics department.
-   =========================================================== */
+var PARTS=[], BYID={}, WIRES=[], scene, camera, renderer, root, wireG;
+var ray=new THREE.Raycaster(), ptr=new THREE.Vector2(), spotLayer=document.getElementById('spots');
 
-var PARTS = [], scene, camera, renderer, root, wires;
-var ray = new THREE.Raycaster(), ptr = new THREE.Vector2();
-var spotLayer = document.getElementById('spots');
-
-scene = new THREE.Scene();
-scene.background = new THREE.Color(0xf2f1ec);
-camera = new THREE.PerspectiveCamera(34, innerWidth/innerHeight, 1, 8000);
-
-renderer = new THREE.WebGLRenderer({antialias:true});
-renderer.setPixelRatio(Math.min(devicePixelRatio,2));
-renderer.setSize(innerWidth, innerHeight);
-renderer.outputEncoding = THREE.sRGBEncoding;
+scene=new THREE.Scene(); scene.background=new THREE.Color(0xf1f0eb);
+camera=new THREE.PerspectiveCamera(34, innerWidth/innerHeight, 1, 9000);
+renderer=new THREE.WebGLRenderer({antialias:true});
+renderer.setPixelRatio(Math.min(devicePixelRatio,2)); renderer.setSize(innerWidth,innerHeight);
+renderer.outputEncoding=THREE.sRGBEncoding; renderer.toneMapping=THREE.ACESFilmicToneMapping; renderer.toneMappingExposure=1.05;
 document.getElementById('app').appendChild(renderer.domElement);
+root=new THREE.Group(); scene.add(root); wireG=new THREE.Group(); root.add(wireG);
 
-root = new THREE.Group(); scene.add(root);
-wires = new THREE.Group(); root.add(wires);
+scene.add(new THREE.HemisphereLight(0xffffff,0xcdd0c8,0.9));
+var L1=new THREE.DirectionalLight(0xffffff,.8); L1.position.set(480,760,420); scene.add(L1);
+var L2=new THREE.DirectionalLight(0xe6edf6,.4); L2.position.set(-560,300,-380); scene.add(L2);
+var L3=new THREE.DirectionalLight(0xfff4e6,.28); L3.position.set(120,-420,520); scene.add(L3);
 
-/* ---------- light setup tuned for a pale background ---------- */
-scene.add(new THREE.HemisphereLight(0xffffff, 0xcfd2cb, 0.95));
-var k1 = new THREE.DirectionalLight(0xffffff, 0.72); k1.position.set(480,760,420); scene.add(k1);
-var k2 = new THREE.DirectionalLight(0xe8eef5, 0.36); k2.position.set(-560,300,-380); scene.add(k2);
-var k3 = new THREE.DirectionalLight(0xffffff, 0.22); k3.position.set(120,-420,520); scene.add(k3);
-
-/* soft contact shadow */
-(function(){
-  var c = document.createElement('canvas'); c.width = c.height = 256;
-  var g = c.getContext('2d').createRadialGradient(128,128,10,128,128,126);
-  g.addColorStop(0,'rgba(60,64,58,.30)'); g.addColorStop(.55,'rgba(60,64,58,.10)');
-  g.addColorStop(1,'rgba(60,64,58,0)');
-  var ctx = c.getContext('2d'); ctx.fillStyle = g; ctx.fillRect(0,0,256,256);
-  var m = new THREE.Mesh(
-    new THREE.PlaneGeometry(1500,1500),
-    new THREE.MeshBasicMaterial({map:new THREE.CanvasTexture(c), transparent:true, depthWrite:false})
-  );
-  m.rotation.x = -Math.PI/2; m.position.y = -232; scene.add(m);
-})();
+function shadow(w,h,x,z,y){
+  var c=document.createElement('canvas'); c.width=c.height=256; var ctx=c.getContext('2d');
+  var g=ctx.createRadialGradient(128,128,8,128,128,126);
+  g.addColorStop(0,'rgba(56,60,54,.32)'); g.addColorStop(.5,'rgba(56,60,54,.10)'); g.addColorStop(1,'rgba(56,60,54,0)');
+  ctx.fillStyle=g; ctx.fillRect(0,0,256,256);
+  var m=new THREE.Mesh(new THREE.PlaneGeometry(w,h),new THREE.MeshBasicMaterial({map:new THREE.CanvasTexture(c),transparent:true,depthWrite:false}));
+  m.rotation.x=-Math.PI/2; m.position.set(x,y,z); scene.add(m);
+}
+shadow(1500,1500,0,0,-232);
 
 /* ---------- materials ---------- */
-function M(c,m,r,o){
-  return new THREE.MeshStandardMaterial({
-    color:c, metalness:m, roughness:r,
-    transparent:o!==undefined, opacity:o!==undefined?o:1
-  });
-}
-var MAT = {
-  carbon  : M(0x24272c,.42,.48),   // plates
-  carbonL : M(0x2b2f35,.40,.52),
-  tube    : M(0x1e2126,.45,.42),   // arm tubes
-  anod    : M(0x15171a,.80,.34),   // black anodised clamps
-  anodL   : M(0x202429,.78,.38),
-  chrome  : M(0xc4c9cf,.95,.16),   // motor bell
-  motorB  : M(0x131519,.80,.30),
-  copper  : M(0xa9682f,.85,.42),
-  prop    : M(0x262a30,.35,.46),
-  pcbG    : M(0x1c6a51,.20,.62),
-  pcbK    : M(0x14171c,.28,.58),
-  gold    : M(0xc9a227,.90,.30),
-  alu     : M(0x8b9199,.85,.32),
-  white   : M(0xe6e8ea,.30,.36),
-  batt    : M(0x9aa2ab,.55,.40),
-  plastic : M(0x1a1d21,.15,.66),
-  foam    : M(0x2a2d31,.05,.88),
-  rust    : M(0x8c3f28,.30,.55),
-  glass   : M(0x0d1014,.25,.14)
+function M(c,m,r,e){var o=new THREE.MeshStandardMaterial({color:c,metalness:m,roughness:r}); if(e){o.emissive=new THREE.Color(e);o.emissiveIntensity=.9;} return o;}
+var MAT={
+  carbon:M(0x25282d,.42,.46), carbonL:M(0x2c3036,.40,.5), tube:M(0x1e2126,.45,.4),
+  anod:M(0x141618,.82,.32), anodL:M(0x1f2327,.78,.36), chrome:M(0xc9ced4,.96,.14), motorB:M(0x121417,.8,.3),
+  copper:M(0xb26e2f,.86,.4), prop:M(0x262a30,.36,.44), pcbG:M(0x1b6a50,.18,.6), pcbK:M(0x151a20,.28,.56),
+  pcbB:M(0x1e3a66,.2,.6), gold:M(0xd4a828,.9,.28), yellow:M(0xe3b422,.15,.5), alu:M(0x8e949c,.85,.3),
+  white:M(0xe7e9eb,.28,.36), batt:M(0x9ba3ac,.55,.4), plastic:M(0x1a1d21,.15,.64), foam:M(0x2b2e32,.05,.9),
+  rust:M(0x8d4029,.3,.55), glass:M(0x0c0f13,.25,.12), red:M(0xc8342a,.2,.5), orange:M(0xd98a1e,.2,.45),
+  blue:M(0x2c62c8,.3,.45), silver:M(0xb9bec4,.9,.22), ledR:M(0xd22a2a,.1,.5,0xff2a2a), ledG:M(0x22b04a,.1,.5,0x2aff5a),
+  screen:M(0x0f1216,.4,.2), screenOn:M(0x0d1f2a,.3,.3,0x0e3a4a), fpc:M(0xd7892a,.25,.4), lipoB:M(0x2d6ad8,.2,.4)
 };
+var bx=function(w,h,d,m){return new THREE.Mesh(new THREE.BoxGeometry(w,h,d),m);};
+var cy=function(a,b,h,m,s){return new THREE.Mesh(new THREE.CylinderGeometry(a,b,h,s||28),m);};
 
-var bx = function(w,h,d,m){ return new THREE.Mesh(new THREE.BoxGeometry(w,h,d), m); };
-var cy = function(a,b,h,m,s){ return new THREE.Mesh(new THREE.CylinderGeometry(a,b,h,s||28), m); };
-
-/* hexagonal frame plate matching the X650 outline */
-function plate(len, wid, th, m){
-  var s = new THREE.Shape();
-  var L = len/2, W = wid/2, n = L*0.46;
-  s.moveTo(L, 0); s.lineTo(n, -W); s.lineTo(-n, -W);
-  s.lineTo(-L, 0); s.lineTo(-n, W); s.lineTo(n, W); s.closePath();
-  var g = new THREE.ExtrudeGeometry(s, {depth:th, bevelEnabled:false, curveSegments:4});
-  g.rotateX(Math.PI/2); g.translate(0, th/2, 0);
-  var mesh = new THREE.Mesh(g, m);
-  mesh.rotation.y = Math.PI/2;   // long axis along X
-  return mesh;
+function plate(len,wid,th,m){
+  var s=new THREE.Shape(), L=len/2, W=wid/2, n=L*.46;
+  s.moveTo(L,0);s.lineTo(n,-W);s.lineTo(-n,-W);s.lineTo(-L,0);s.lineTo(-n,W);s.lineTo(n,W);s.closePath();
+  var g=new THREE.ExtrudeGeometry(s,{depth:th,bevelEnabled:false}); g.rotateX(Math.PI/2); g.translate(0,th/2,0);
+  var mesh=new THREE.Mesh(g,m); mesh.rotation.y=Math.PI/2; return mesh;
 }
-
-/* fluted aluminium collar — the distinctive X650 arm clamp */
-function collar(r, h, m){
-  var g = new THREE.Group();
-  g.add(cy(r,r,h,m,26));
-  for(var i=0;i<12;i++){
-    var f = bx(1.5, h*0.72, 2.6, MAT.anod);
-    var a = i/12*Math.PI*2;
-    f.position.set(Math.cos(a)*(r+0.4), 0, Math.sin(a)*(r+0.4));
-    f.rotation.y = -a;
-    g.add(f);
-  }
+function collar(r,h,m){
+  var g=new THREE.Group(); g.add(cy(r,r,h,m,26));
+  for(var i=0;i<12;i++){var f=bx(1.5,h*.72,2.6,MAT.anod),a=i/12*Math.PI*2;
+    f.position.set(Math.cos(a)*(r+.4),0,Math.sin(a)*(r+.4)); f.rotation.y=-a; g.add(f);}
   return g;
 }
-
-/* swept two-blade carbon propeller, built as a parametric ribbon */
-function blade(len, m){
-  var SEG = 26, pos = [], idx = [];
-  for(var i=0;i<=SEG;i++){
-    var t = i/SEG;
-    var chord = 30 * Math.sin(Math.PI * Math.pow(t,0.55)) * (1 - 0.30*t) + 5;
-    var sweep = 26 * Math.pow(t, 2.4);           // swept tip
-    var rise  = 7  * Math.sin(Math.PI*t) ;
-    var tw    = (0.40 - 0.34*t);                  // washout
-    var x = t*len, z0 = sweep;
-    var ch = chord/2;
-    pos.push(x, rise + Math.sin(tw)*ch,  z0 - Math.cos(tw)*ch);
-    pos.push(x, rise - Math.sin(tw)*ch,  z0 + Math.cos(tw)*ch);
-  }
-  for(var j=0;j<SEG;j++){
-    var a=j*2, b=j*2+1, c=j*2+2, d=j*2+3;
-    idx.push(a,c,b, b,c,d);
-  }
-  var g = new THREE.BufferGeometry();
-  g.setAttribute('position', new THREE.Float32BufferAttribute(pos,3));
-  g.setIndex(idx); g.computeVertexNormals();
-  var mesh = new THREE.Mesh(g, m);
-  mesh.material.side = THREE.DoubleSide;
-  return mesh;
+function screwRing(gp,pts,y,m){pts.forEach(function(p){var s=cy(2,2,2.2,m||MAT.silver,10);s.position.set(p[0],y,p[1]);gp.add(s);});}
+function blade(len,m){
+  var SEG=26,pos=[],idx=[];
+  for(var i=0;i<=SEG;i++){var t=i/SEG,chord=30*Math.sin(Math.PI*Math.pow(t,.55))*(1-.3*t)+5,sw=26*Math.pow(t,2.4),
+    rise=7*Math.sin(Math.PI*t),tw=.4-.34*t,x=t*len,ch=chord/2;
+    pos.push(x,rise+Math.sin(tw)*ch,sw-Math.cos(tw)*ch); pos.push(x,rise-Math.sin(tw)*ch,sw+Math.cos(tw)*ch);}
+  for(var j=0;j<SEG;j++){var a=j*2,b=j*2+1,c=j*2+2,d=j*2+3;idx.push(a,c,b,b,c,d);}
+  var g=new THREE.BufferGeometry(); g.setAttribute('position',new THREE.Float32BufferAttribute(pos,3)); g.setIndex(idx); g.computeVertexNormals();
+  var mesh=new THREE.Mesh(g,m); mesh.material=m.clone(); mesh.material.side=THREE.DoubleSide; return mesh;
 }
 
-/* register an interactive part */
-var SPOT_N = 0;
+var SPOT_N=0;
 function part(o){
-  var g = new THREE.Group();
-  g.position.set(o.pos[0], o.pos[1], o.pos[2]);
-  g.userData = {
-    id:o.id, name:o.name, pn:o.pn||'', cat:o.cat||'COMPONENT',
-    desc:o.desc||'', facts:o.facts||[],
-    home:g.position.clone(),
-    dir:new THREE.Vector3(o.dir[0],o.dir[1],o.dir[2]).normalize(),
-    dist:o.dist||0, grp:o.grp||'core',
-    spot:o.spot ? (++SPOT_N) : 0, spotAt:o.spotAt||[0,0,0]
-  };
-  root.add(g); PARTS.push(g);
-  return g;
+  var g=new THREE.Group(); g.position.set(o.pos[0],o.pos[1],o.pos[2]);
+  g.userData={id:o.id,name:o.name,pn:o.pn||'',cat:o.cat||'COMPONENT',desc:o.desc||'',facts:o.facts||[],
+    home:g.position.clone(),dir:new THREE.Vector3(o.dir[0],o.dir[1],o.dir[2]).normalize(),dist:o.dist||0,
+    grp:o.grp||'core',spot:o.spot?(++SPOT_N):0,spotAt:o.spotAt||[0,0,0],step:o.step===undefined?0:o.step,kit:!!o.kit};
+  root.add(g); PARTS.push(g); BYID[o.id]=g; return g;
 }
 
-/* ===========================================================
-   FRAME
-   =========================================================== */
-var PLATE_L = 214, PLATE_W = 168, ARM_R = 325, CLAMP_R = 92;
-var ANG = [45,135,225,315], NAME = ['Front right','Rear right','Rear left','Front left'], DIRN = ['CCW','CW','CCW','CW'];
+/* ============ FRAME ============ */
+var PL=214,PW=168,ARM_R=325,CR=92, ANG=[45,135,225,315], NAME=['Front right','Rear right','Rear left','Front left'], DIRN=['CCW','CW','CCW','CW'];
 
-var pLower = part({
-  id:'lower', name:'Lower frame plate', pn:'Carbon, 2.5 mm', cat:'FRAME',
-  pos:[0,0,0], dir:[0,-1,0], dist:105, spot:true, spotAt:[-96,0,0],
-  desc:'The structural floor of the aircraft. Arm clamps bolt to its four corners, the power distribution board sits on top of it, and the landing gear and battery tray hang beneath.',
-  facts:[['SPAN','214 × 168 mm'],['THICKNESS','2.5 mm']]
-});
-pLower.add(plate(PLATE_L, PLATE_W, 2.5, MAT.carbon));
+var pLower=part({id:'lower',name:'Lower frame plate',pn:'Carbon, 2.5 mm',cat:'FRAME',pos:[0,0,0],dir:[0,-1,0],dist:105,spot:true,spotAt:[-96,0,0],step:1,
+  desc:'The structural floor. Arm hinges bolt to the four corners, the power distribution board sits on top, and the landing gear and battery tray hang beneath.',
+  facts:[['SPAN','214 × 168 mm'],['THICKNESS','2.5 mm']]});
+pLower.add(plate(PL,PW,2.5,MAT.carbon));
+screwRing(pLower,[[78,42],[78,-42],[-78,42],[-78,-42],[0,66],[0,-66],[60,0],[-60,0]],2.2);
 
-var pUpper = part({
-  id:'upper', name:'Upper frame plate', pn:'Carbon, 2.5 mm', cat:'FRAME',
-  pos:[0,33,0], dir:[0,1,0], dist:150, spot:true, spotAt:[-96,2,0],
-  desc:'Clamps the arms from above and carries the compute stack. On this aircraft the Jetson carrier board, telemetry radio and antennas all mount to this face.',
-  facts:[['SPAN','214 × 168 mm'],['CARRIES','Compute stack']]
-});
-pUpper.add(plate(PLATE_L, PLATE_W, 2.5, MAT.carbon));
+var pUpper=part({id:'upper',name:'Upper frame plate',pn:'Carbon, 2.5 mm',cat:'FRAME',pos:[0,33,0],dir:[0,1,0],dist:150,spot:true,spotAt:[-96,2,0],step:5,
+  desc:'Clamps the arms from above and carries the compute stack. The Jetson carrier board, telemetry radio, receiver and antennas all mount to this face.',
+  facts:[['SPAN','214 × 168 mm'],['CARRIES','Compute stack']]});
+pUpper.add(plate(PL,PW,2.5,MAT.carbon));
+screwRing(pUpper,[[78,42],[78,-42],[-78,42],[-78,-42],[0,66],[0,-66],[60,0],[-60,0]],2.2);
 
-/* standoffs between the plates */
-var pStand = part({
-  id:'standoffs', name:'Frame standoffs', pn:'M3 aluminium, 30 mm', cat:'FRAME',
-  pos:[0,17,0], dir:[0,1,0], dist:0,
-  desc:'Set the gap between the plates. The PDB, wiring loom and arm roots all live in this cavity.',
-  facts:[['HEIGHT','30 mm']]
-});
-[[78,42],[78,-42],[-78,42],[-78,-42],[0,66],[0,-66]].forEach(function(p){
-  var s = cy(2.6,2.6,30,MAT.alu,12); s.position.set(p[0],0,p[1]); pStand.add(s);
-});
+var pStand=part({id:'standoffs',name:'Frame standoffs',pn:'M3 aluminium, 30 mm',cat:'FRAME',pos:[0,17,0],dir:[0,1,0],dist:0,step:5,
+  desc:'Set the gap between the plates. The PDB, wiring loom and arm roots all live in this cavity.',facts:[['HEIGHT','30 mm']]});
+[[78,42],[78,-42],[-78,42],[-78,-42],[0,66],[0,-66]].forEach(function(p){var s=cy(2.6,2.6,30,MAT.alu,12);s.position.set(p[0],0,p[1]);pStand.add(s);});
 
-/* ---------- arms ---------- */
 ANG.forEach(function(deg,i){
-  var a = deg*Math.PI/180, ux = Math.cos(a), uz = Math.sin(a);
-  var inner = CLAMP_R, outer = ARM_R - 24, mid = (inner+outer)/2;
+  var a=deg*Math.PI/180,ux=Math.cos(a),uz=Math.sin(a),inner=CR,outer=ARM_R-24,mid=(inner+outer)/2;
+  var pH=part({id:'hinge-'+i,name:'Folding arm clamp '+(i+1),pn:'Anodised aluminium',cat:'FRAME',pos:[ux*(inner-16),16.5,uz*(inner-16)],dir:[ux,0,uz],dist:120,spot:(i===0),spotAt:[0,22,0],step:1,
+    desc:'The fold hinge and tube clamp. ESC wires pass through the hollow centre into the frame cavity. The collar must seat positively — a mushy lock means the motors will not sit coplanar, which shows up as a persistent trim problem in the air.',
+    facts:[['TYPE','Foldable'],['TUBE','25 mm'],['CHECK','Motors coplanar']]});
+  pH.add(bx(34,30,34,MAT.anod)); var hole=cy(9,9,36,MAT.plastic,18);hole.rotation.z=Math.PI/2;hole.rotation.y=-a;pH.add(hole);
+  var col=collar(13.5,22,MAT.anodL);col.rotation.z=Math.PI/2;col.rotation.y=-a;col.position.set(ux*24,0,uz*24);pH.add(col);
+  screwRing(pH,[[-11,-11],[11,-11],[-11,11],[11,11]],15.5);
 
-  /* hinge block on the frame corner */
-  var pHinge = part({
-    id:'hinge-'+i, name:'Folding arm clamp '+(i+1), pn:'Anodised aluminium', cat:'FRAME',
-    pos:[ux*(inner-16), 16.5, uz*(inner-16)], dir:[ux,0,uz], dist:120,
-    spot:(i===0), spotAt:[0,22,0],
-    desc:'The fold hinge and tube clamp. Wires from the ESC pass through the hollow centre into the frame cavity. The collar must seat positively — a mushy lock means the motors will not sit coplanar, and that shows up as a persistent trim problem in the air.',
-    facts:[['TYPE','Foldable'],['TUBE','25 mm'],['CHECK','Motors coplanar']]
-  });
-  var blk = bx(34,30,34, MAT.anod); pHinge.add(blk);
-  var hole = cy(9,9,36,MAT.plastic,18); hole.rotation.z = Math.PI/2; hole.rotation.y = -a; pHinge.add(hole);
-  var col = collar(13.5, 22, MAT.anodL);
-  col.rotation.z = Math.PI/2; col.rotation.y = -a;
-  col.position.set(ux*24, 0, uz*24); pHinge.add(col);
+  /* XT30 plug at the arm root — where the ESC meets the PDB */
+  var pX=part({id:'xt30-'+i,name:'XT30 arm plug '+(i+1),pn:'ESC power connector',cat:'POWER',pos:[ux*62,10,uz*62],dir:[ux,-.4,uz],dist:120,grp:'inside',spot:(i===0),spotAt:[0,10,0],step:3,
+    desc:'The small yellow plug at the root of each arm. The ESC\'s power lead ends here and plugs straight into the PDB — this is what makes the X650 a no-solder kit. Pull this to isolate one arm for troubleshooting.',
+    facts:[['TYPE','XT30'],['FROM','ESC lead'],['TO','PDB output']]});
+  var xt=bx(9,7,6,MAT.yellow);xt.rotation.y=-a;pX.add(xt);
 
-  /* arm tube */
-  var pArm = part({
-    id:'arm-'+i, name:'Arm '+(i+1)+' · '+NAME[i], pn:'25 mm carbon tube', cat:'FRAME',
-    pos:[ux*mid, 16.5, uz*mid], dir:[ux,0,uz], dist:230,
-    spot:(i===0), spotAt:[0,20,0],
-    desc:'Carbon tube running from the fold hinge to the motor mount. The ESC and its power leads live inside the tube — pull the motor-end clamp to reach them. Folds inward for transport.',
-    facts:[['DIAMETER','25 mm'],['REACH','325 mm from centre'],['CONTAINS','ESC + leads'],['POSITION',NAME[i]]]
-  });
-  var tube = cy(12.5,12.5, outer-inner, MAT.tube, 24);
-  tube.rotation.z = Math.PI/2; tube.rotation.y = -a; pArm.add(tube);
+  var pA=part({id:'arm-'+i,name:'Arm '+(i+1)+' · '+NAME[i],pn:'25 mm carbon tube',cat:'FRAME',pos:[ux*mid,16.5,uz*mid],dir:[ux,0,uz],dist:230,spot:(i===0),spotAt:[0,20,0],step:3,
+    desc:'Carbon tube from the fold hinge to the motor mount. The ESC and its leads live inside — pull the motor-end clamp to reach them. A status LED strip sits on the underside near the tip: red on the left arms, green on the right, so you can read orientation at a glance.',
+    facts:[['DIAMETER','25 mm'],['REACH','325 mm'],['CONTAINS','ESC + leads + LED'],['POSITION',NAME[i]]]});
+  var tube=cy(12.5,12.5,outer-inner,MAT.tube,24);tube.rotation.z=Math.PI/2;tube.rotation.y=-a;pA.add(tube);
+  var led=bx(28,2.5,7,(uz>0)?MAT.ledG:MAT.ledR);led.rotation.y=-a;
+  led.position.set(ux*(outer-inner)/2*.62,-12,uz*(outer-inner)/2*.62);pA.add(led);
 
-  /* ESC inside the tube */
-  var pEsc = part({
-    id:'esc-'+i, name:'ESC '+(i+1), pn:'Pre-installed, XT30 to PDB', cat:'PROPULSION',
-    pos:[ux*(outer-62), 16.5, uz*(outer-62)], dir:[0,-1,0], dist:170, grp:'inside',
-    spot:(i===0), spotAt:[0,-16,0],
-    desc:'Electronic speed controller. Takes a throttle command from the flight controller and drives the motor\'s three phases. On the X650 these come pre-installed inside the arm tubes and plug into the power distribution board with an XT30 — no soldering.',
-    facts:[['LOCATION','Inside the arm'],['POWER','XT30 to PDB'],['SIGNAL','From flight controller'],['OUTPUT','3-phase']]
-  });
-  var escb = bx(52,2,13, MAT.pcbK); escb.rotation.y = -a; pEsc.add(escb);
-  for(var e=0;e<4;e++){
-    var chip = bx(6,3,6, MAT.alu);
-    chip.position.set(Math.cos(a)*(-18+e*12), 2.4, Math.sin(a)*(-18+e*12));
-    pEsc.add(chip);
-  }
+  var pE=part({id:'esc-'+i,name:'ESC '+(i+1),pn:'Pre-installed, XT30 to PDB',cat:'PROPULSION',pos:[ux*(outer-62),16.5,uz*(outer-62)],dir:[0,-1,0],dist:170,grp:'inside',spot:(i===0),spotAt:[0,-16,0],step:3,
+    desc:'Electronic speed controller. It takes a throttle command from the flight controller and drives the motor\'s three phases. Pre-installed inside the arm tube, with a power lead down to the XT30 at the root and three phase leads out to the motor.',
+    facts:[['LOCATION','Inside the arm'],['POWER','XT30 to PDB'],['SIGNAL','From FC'],['OUTPUT','3-phase']]});
+  var escb=bx(52,2,13,MAT.pcbK);escb.rotation.y=-a;pE.add(escb);
+  for(var e=0;e<4;e++){var chip=bx(6,3,6,MAT.alu);chip.position.set(Math.cos(a)*(-18+e*12),2.4,Math.sin(a)*(-18+e*12));pE.add(chip);}
+  var cap=cy(4,4,8,MAT.pcbB,12);cap.rotation.z=Math.PI/2;cap.rotation.y=-a;cap.position.set(Math.cos(a)*22,3,Math.sin(a)*22);pE.add(cap);
 
-  /* motor mount + motor */
-  var pMot = part({
-    id:'motor-'+i, name:'Motor '+(i+1), pn:'T-Motor brushless outrunner', cat:'PROPULSION',
-    pos:[ux*ARM_R, 30, uz*ARM_R], dir:[ux,0.3,uz], dist:230,
-    spot:(i===0), spotAt:[0,26,0],
-    desc:'Brushless outrunner on an aluminium tube clamp. Three phase wires — swapping any two reverses the direction. Motor ' + (i+1) + ' must turn ' + DIRN[i] + '. Verifying direction with props off is the single step that prevents most first-flight crashes.',
-    facts:[['ROTATION',DIRN[i]],['MOUNT','Tube clamp'],['WIRES','3-phase'],['VERIFY','Props off, first']]
-  });
-  var mnt = collar(15, 20, MAT.anod);
-  mnt.rotation.z = Math.PI/2; mnt.rotation.y = -a; mnt.position.y = -14; pMot.add(mnt);
-  var yoke = bx(26,16,30, MAT.anod); yoke.position.y = -4; yoke.rotation.y = -a; pMot.add(yoke);
-  var base = cy(20,20,9, MAT.motorB, 30); base.position.y = 7; pMot.add(base);
-  var wind = cy(19,19,11, MAT.copper, 30); wind.position.y = 15; pMot.add(wind);
-  var bell = cy(20.5,20.5,13, MAT.chrome, 30); bell.position.y = 22; pMot.add(bell);
-  var cap  = cy(19,20.5,4, MAT.motorB, 30); cap.position.y = 30; pMot.add(cap);
-  var hub  = cy(6,6,9, MAT.alu, 18); hub.position.y = 35; pMot.add(hub);
+  var pM=part({id:'motor-'+i,name:'Motor '+(i+1),pn:'T-Motor brushless outrunner',cat:'PROPULSION',pos:[ux*ARM_R,30,uz*ARM_R],dir:[ux,.3,uz],dist:230,spot:(i===0),spotAt:[0,26,0],step:4,
+    desc:'Brushless outrunner on an aluminium tube clamp. Three phase wires come up from the ESC — swapping any two reverses direction. Motor '+(i+1)+' must turn '+DIRN[i]+'. Verifying direction with props off is the single step that prevents most first-flight crashes.',
+    facts:[['ROTATION',DIRN[i]],['MOUNT','Tube clamp'],['WIRES','3-phase, bullet'],['VERIFY','Props off, first']]});
+  var mnt=collar(15,20,MAT.anod);mnt.rotation.z=Math.PI/2;mnt.rotation.y=-a;mnt.position.y=-14;pM.add(mnt);
+  var yoke=bx(26,16,30,MAT.anod);yoke.position.y=-4;yoke.rotation.y=-a;pM.add(yoke);
+  var base=cy(20,20,9,MAT.motorB,30);base.position.y=7;pM.add(base);
+  var wind=cy(19,19,11,MAT.copper,30);wind.position.y=15;pM.add(wind);
+  var bell=cy(20.5,20.5,13,MAT.chrome,30);bell.position.y=22;pM.add(bell);
+  var mc=cy(19,20.5,4,MAT.motorB,30);mc.position.y=30;pM.add(mc);
+  var hub=cy(6,6,9,MAT.alu,18);hub.position.y=35;pM.add(hub);
+  screwRing(pM,[[-9,0],[9,0],[0,-9],[0,9]],32.2,MAT.anod);
+  for(var bl=0;bl<3;bl++){var bul=cy(1.6,1.6,7,MAT.gold,8);bul.rotation.z=Math.PI/2;bul.rotation.y=-a;
+    bul.position.set(-ux*24+Math.sin(a)*(bl-1)*5,-2,-uz*24-Math.cos(a)*(bl-1)*5);pM.add(bul);}
 
-  /* propeller */
-  var pProp = part({
-    id:'prop-'+i, name:'Propeller '+(i+1), pn:'Carbon, two blade', cat:'PROPULSION',
-    pos:[ux*ARM_R, 70, uz*ARM_R], dir:[0,1,0], dist:170, grp:'props',
-    spot:(i===0), spotAt:[0,10,0],
-    desc:'Swept carbon blade pair on a collet adapter. Propellers come in two handednesses that look nearly identical — check the hub marking before fitting. Always the first thing off the aircraft before any bench work.',
-    facts:[['ROTATION',DIRN[i]],['BLADES','2'],['RETENTION','Collet adapter'],['RULE','Off for bench work']]
-  });
-  var ph = cy(11,12,7, MAT.anod, 20); pProp.add(ph);
-  var pn2 = cy(4.5,4.5,4, MAT.alu, 14); pn2.position.y = 5; pProp.add(pn2);
-  for(var b=0;b<2;b++){
-    var bl = blade(186, MAT.prop);
-    bl.rotation.y = b*Math.PI;
-    bl.position.y = 1;
-    pProp.add(bl);
-  }
-  pProp.rotation.y = -a + 0.55;
+  var pP=part({id:'prop-'+i,name:'Propeller '+(i+1),pn:'Carbon, two blade',cat:'PROPULSION',pos:[ux*ARM_R,70,uz*ARM_R],dir:[0,1,0],dist:170,grp:'props',spot:(i===0),spotAt:[0,10,0],step:12,
+    desc:'Swept carbon blade pair on a collet adapter with M2.5 countersunk screws. Propellers come in two handednesses that look nearly identical — check the hub marking before fitting. Always the last thing on and the first thing off.',
+    facts:[['ROTATION',DIRN[i]],['BLADES','2'],['RETENTION','Collet + M2.5'],['RULE','Last on, first off']]});
+  pP.add(cy(11,12,7,MAT.anod,20)); var pn2=cy(4.5,4.5,4,MAT.alu,14);pn2.position.y=5;pP.add(pn2);
+  for(var b=0;b<2;b++){var bd=blade(186,MAT.prop);bd.rotation.y=b*Math.PI;bd.position.y=1;pP.add(bd);}
+  pP.rotation.y=-a+.55;
 });
 
-/* ---------- landing gear: splayed A-frame with long skids ---------- */
 [[1,'Right'],[-1,'Left']].forEach(function(s,i){
-  var sg = s[0];
-  var pGear = part({
-    id:'gear-'+i, name:'Landing gear · '+s[1], pn:'Carbon A-frame + skid', cat:'FRAME',
-    pos:[0,-118,sg*4], dir:[0,-0.55,sg], dist:250,
-    spot:(i===0), spotAt:[0,-96,0],
-    desc:'Splayed carbon legs on a long foam-wrapped skid. The splay sets how much room there is underneath, which is what the battery, the depth camera and the downward flow sensor all have to fit inside.',
-    facts:[['CLEARANCE','~210 mm'],['SKID','Foam wrapped'],['SPLAY','Outward']]
-  });
-  [64,-64].forEach(function(xo){
-    var leg = cy(7,7,206, MAT.tube, 14);
-    leg.position.set(xo, 0, sg*54);
-    leg.rotation.x = -sg*0.33;
-    pGear.add(leg);
-  });
-  var brace = cy(5,5,132, MAT.tube, 12);
-  brace.rotation.z = Math.PI/2; brace.position.set(0,52,sg*36); pGear.add(brace);
-  var skid = cy(9,9,300, MAT.foam, 16);
-  skid.rotation.z = Math.PI/2; skid.position.set(0,-104,sg*88); pGear.add(skid);
-  [150,-150].forEach(function(xo){
-    var cap = cy(9.5,9.5,9, MAT.rust, 16);
-    cap.rotation.z = Math.PI/2; cap.position.set(xo,-104,sg*88); pGear.add(cap);
-  });
+  var sg=s[0];
+  var pG=part({id:'gear-'+i,name:'Landing gear · '+s[1],pn:'Carbon A-frame + skid',cat:'FRAME',pos:[0,-118,sg*4],dir:[0,-.55,sg],dist:250,spot:(i===0),spotAt:[0,-96,0],step:6,
+    desc:'Splayed carbon legs on a long foam-wrapped skid with red end caps. The splay sets the room underneath — the battery, depth camera and downward flow sensor all have to fit inside that envelope.',
+    facts:[['CLEARANCE','~210 mm'],['SKID','Foam wrapped'],['SPLAY','Outward']]});
+  [64,-64].forEach(function(xo){var leg=cy(7,7,206,MAT.tube,14);leg.position.set(xo,0,sg*54);leg.rotation.x=-sg*.33;pG.add(leg);});
+  var br=cy(5,5,132,MAT.tube,12);br.rotation.z=Math.PI/2;br.position.set(0,52,sg*36);pG.add(br);
+  var sk=cy(9,9,300,MAT.foam,16);sk.rotation.z=Math.PI/2;sk.position.set(0,-104,sg*88);pG.add(sk);
+  [150,-150].forEach(function(xo){var c=cy(9.5,9.5,9,MAT.rust,16);c.rotation.z=Math.PI/2;c.position.set(xo,-104,sg*88);pG.add(c);});
 });
 
-/* ===========================================================
-   POWER
-   =========================================================== */
-var pPdb = part({
-  id:'pdb', name:'Power distribution board', pn:'PDB01-V1.2', cat:'POWER',
-  pos:[0,7,0], dir:[0,-0.4,1], dist:190, spot:true, spotAt:[0,6,44],
-  desc:'Takes one battery input on the large XT60 and fans it out to the four arm ESCs and two accessory outputs. Everything downstream of the battery draws through this board, which is why it sits right in the middle of the frame cavity.',
-  facts:[['INPUT','1 × XT60'],['OUTPUTS','6 × XT60'],['FEEDS','4 ESCs + 2 spare'],['LOCATION','Between plates']]
-});
-pPdb.add(bx(92,2.5,74, MAT.pcbK));
-var bin = bx(16,13,11, MAT.gold); bin.position.set(-18,7.5,0); pPdb.add(bin);
-[[30,-26],[30,26],[-34,-26],[-34,26],[6,-30],[6,30]].forEach(function(p){
-  var o = bx(11,9,8, MAT.gold); o.position.set(p[0],6.5,p[1]); pPdb.add(o);
-});
+/* ============ POWER ============ */
+var pPdb=part({id:'pdb',name:'Power distribution board',pn:'PDB01-V1.2',cat:'POWER',pos:[0,7,0],dir:[0,-.4,1],dist:190,spot:true,spotAt:[0,6,44],step:2,
+  desc:'Takes one battery input on the large XT60 and fans it out to the four arm ESCs and two accessory outputs. Everything downstream of the battery draws through this board, which is why it sits in the middle of the frame cavity.',
+  facts:[['INPUT','1 × XT60'],['OUTPUTS','6 × XT60'],['FEEDS','4 ESCs + 2 spare'],['LOCATION','Between plates']]});
+pPdb.add(bx(92,2.5,74,MAT.pcbK));
+var bin=bx(16,13,11,MAT.yellow);bin.position.set(-18,7.5,0);pPdb.add(bin);
+[[30,-26],[30,26],[-34,-26],[-34,26],[6,-30],[6,30]].forEach(function(p){var o=bx(11,9,8,MAT.yellow);o.position.set(p[0],6.5,p[1]);pPdb.add(o);});
+screwRing(pPdb,[[-42,-33],[42,-33],[-42,33],[42,33]],2);
 
-var pPm = part({
-  id:'pm08', name:'Power module', pn:'Holybro PM08 · DroneCAN', cat:'POWER',
-  pos:[-64,-22,44], dir:[-0.7,-0.4,0.6], dist:210, spot:true, spotAt:[0,-15,0],
-  desc:'Sits in the main battery path and measures voltage and current, reporting both to the flight controller over the CAN bus. Without it the aircraft has no idea how much battery is left, and the low-battery failsafe cannot work.',
-  facts:[['BUS','DroneCAN'],['MEASURES','Volts + amps'],['ENABLES','Battery failsafe']]
-});
-pPm.add(bx(50,18,34, MAT.plastic));
-for(var g=0;g<7;g++){
-  var fin = bx(46,1.6,1.8, MAT.plastic);
-  fin.position.set(0, 9.4, -12 + g*4);
-  pPm.add(fin);
-}
+var pPm=part({id:'pm08',name:'Power module',pn:'Holybro PM08 · DroneCAN',cat:'POWER',pos:[-64,-22,44],dir:[-.7,-.4,.6],dist:210,spot:true,spotAt:[0,-15,0],step:7,
+  desc:'Sits in the main battery path and measures voltage and current, reporting both to the flight controller over the CAN bus. Without it the aircraft has no idea how much battery is left and the low-battery failsafe cannot work. It plugs in with an XT60 pass-through lead.',
+  facts:[['BUS','DroneCAN'],['MEASURES','Volts + amps'],['LEAD','XT60F to XT60'],['ENABLES','Battery failsafe']]});
+pPm.add(bx(50,18,34,MAT.plastic));
+for(var g=0;g<7;g++){var fin=bx(46,1.6,1.8,MAT.plastic);fin.position.set(0,9.4,-12+g*4);pPm.add(fin);}
+var pmled=bx(3,1,3,MAT.ledG);pmled.position.set(18,9.5,10);pPm.add(pmled);
 
-var pTray = part({
-  id:'tray', name:'Battery tray', pn:'Carbon plate on posts', cat:'FRAME',
-  pos:[0,-66,0], dir:[0,-1,0], dist:190,
-  desc:'Slung below the frame on four posts. Straps hold the pack against it; the depth camera bolts to its forward edge.',
-  facts:[['MOUNT','4 posts'],['CARRIES','Battery + payload']]
-});
-pTray.add(bx(160,2.5,120, MAT.carbonL));
-[[70,50],[70,-50],[-70,50],[-70,-50]].forEach(function(p){
-  var post = cy(3,3,64, MAT.alu, 10); post.position.set(p[0],33,p[1]); pTray.add(post);
-});
+var pTray=part({id:'tray',name:'Battery tray',pn:'Carbon plate on posts',cat:'FRAME',pos:[0,-66,0],dir:[0,-1,0],dist:190,step:7,
+  desc:'Slung below the frame on four posts. Holybro straps hold the pack against it; the depth camera bolts to its forward edge.',facts:[['MOUNT','4 posts'],['CARRIES','Battery + payload']]});
+pTray.add(bx(160,2.5,120,MAT.carbonL));
+[[70,50],[70,-50],[-70,50],[-70,-50]].forEach(function(p){var post=cy(3,3,64,MAT.alu,10);post.position.set(p[0],33,p[1]);pTray.add(post);});
 
-var pBatt = part({
-  id:'battery', name:'Flight battery', pn:'LiPo pack · XT90', cat:'POWER',
-  pos:[0,-90,0], dir:[0,-1,0], dist:250, grp:'battery', spot:true, spotAt:[0,-24,0],
-  desc:'Lithium polymer pack strapped into the tray. It terminates in an XT90, larger than the XT60s used elsewhere on the aircraft. Keep it disconnected and the contacts taped for every bench session — the flight controller runs perfectly well off USB, and nothing in commissioning needs the pack.',
-  facts:[['CONNECTOR','XT90'],['BALANCE LEAD','Charging only'],['BENCH','Always disconnected'],['STORAGE','Fireproof bag']]
-});
-pBatt.add(bx(152,44,54, MAT.batt));
-[[-38],[38]].forEach(function(z){
-  var st = bx(156,46,13, MAT.plastic); st.position.z = z[0]; pBatt.add(st);
-});
-var xt90 = bx(17,14,12, MAT.gold); xt90.position.set(84,-8,0); pBatt.add(xt90);
+var pBatt=part({id:'battery',name:'Flight battery',pn:'LiPo pack · XT90',cat:'POWER',pos:[0,-90,0],dir:[0,-1,0],dist:250,grp:'battery',spot:true,spotAt:[0,-24,0],step:11,
+  desc:'Lithium polymer pack strapped into the tray. It terminates in an XT90, larger than the XT60s elsewhere on the aircraft. The thin white balance plug beside it is for the charger only. Keep it disconnected and taped for every bench session — the flight controller runs off USB.',
+  facts:[['CONNECTOR','XT90'],['BALANCE','Charger only'],['BENCH','Always disconnected'],['STORAGE','Fireproof bag']]});
+pBatt.add(bx(152,44,54,MAT.batt));
+[-38,38].forEach(function(z){var st=bx(156,46,13,MAT.plastic);st.position.z=z;pBatt.add(st);});
+var x90=bx(17,14,12,MAT.yellow);x90.position.set(84,-8,0);pBatt.add(x90);
+var bal=bx(10,5,14,MAT.white);bal.position.set(80,-16,14);pBatt.add(bal);
 
-/* ===========================================================
-   COMPUTE
-   =========================================================== */
-var pCarrier = part({
-  id:'carrier', name:'Carrier board', pn:'PAB-BASE-OrinNX-R2.04', cat:'COMPUTE',
-  pos:[0,37,0], dir:[0,1,0], dist:250, spot:true, spotAt:[-62,4,0],
-  desc:'The board everything plugs into. It carries the Jetson module and integrates the flight controller, so there is no separate Pixhawk box floating in the loom. The bank of white JST-GH sockets along its left edge is the flight controller I/O — GPS, receiver and sensors all land there.',
-  facts:[['CARRIES','Jetson Orin NX'],['I/O','JST-GH, USB 3, Ethernet'],['POWER','From PM08'],['FC','Integrated']]
-});
-pCarrier.add(bx(148,2.5,108, MAT.pcbG));
-for(var jc=0;jc<8;jc++){
-  var jst = bx(4.5,5,9, MAT.white);
-  jst.position.set(-62, 3.6, -42 + jc*12);
-  pCarrier.add(jst);
-}
-[-52,-42].forEach(function(z){
-  var u = bx(15,7.5,6.5, MAT.alu); u.position.set(-6,5,z); pCarrier.add(u);
-});
-var rj = bx(17,12,15, MAT.alu); rj.position.set(-26,7,36); pCarrier.add(rj);
+/* ============ COMPUTE ============ */
+var pCar=part({id:'carrier',name:'Carrier board',pn:'PAB-BASE-OrinNX-R2.04',cat:'COMPUTE',pos:[0,37,0],dir:[0,1,0],dist:250,spot:true,spotAt:[-62,4,0],step:8,
+  desc:'The board everything plugs into. It carries the Jetson module and integrates the flight controller, so there is no separate Pixhawk. The white JST-GH sockets down the left edge are the flight controller I/O — GPS, receiver, power module, buzzer and sensors all land there. Two blue USB 3 ports feed the Jetson.',
+  facts:[['CARRIES','Jetson Orin NX'],['I/O','JST-GH, USB 3, Ethernet'],['POWER','From PM08'],['FC','Integrated']]});
+pCar.add(bx(148,2.5,108,MAT.pcbG));
+for(var jc=0;jc<8;jc++){var jst=bx(4.5,5,9,MAT.white);jst.position.set(-62,3.6,-42+jc*12);pCar.add(jst);}
+[-52,-42].forEach(function(z){var u=bx(15,7.5,6.5,MAT.blue);u.position.set(-6,5,z);pCar.add(u);});
+var rj=bx(17,12,15,MAT.alu);rj.position.set(-26,7,36);pCar.add(rj);
+var usbc=bx(8,3,4,MAT.silver);usbc.position.set(66,3,-30);pCar.add(usbc);
+screwRing(pCar,[[-68,-48],[68,-48],[-68,48],[68,48]],2.2);
 
-var pJet = part({
-  id:'jetson', name:'NVIDIA Jetson Orin NX', pn:'Companion computer', cat:'COMPUTE',
-  pos:[32,49,0], dir:[0.35,1,0], dist:270, spot:true, spotAt:[0,26,0],
+var pJet=part({id:'jetson',name:'NVIDIA Jetson Orin NX',pn:'Companion computer',cat:'COMPUTE',pos:[32,49,0],dir:[.35,1,0],dist:270,spot:true,spotAt:[0,26,0],step:8,
   desc:'The onboard Linux computer, and the reason this airframe can do autonomy at all. It talks to the flight controller over MAVLink and to the depth camera over USB 3. Nothing it does is needed for a first manual hover — treat it as a separate project from getting the aircraft airworthy.',
-  facts:[['ROLE','Autonomy + vision'],['LINK','MAVLink to FC'],['CAMERA','USB 3 only'],['COOLING','Active fan']]
-});
-pJet.add(bx(68,9,66, MAT.pcbK));
-var sink = bx(60,15,60, MAT.alu); sink.position.y = 12; pJet.add(sink);
-for(var fi=0;fi<11;fi++){
-  var f2 = bx(58,4,1.6, MAT.alu); f2.position.set(0,17,-26+fi*5.2); pJet.add(f2);
-}
-var fanb = cy(20,20,7, MAT.plastic, 24); fanb.position.y = 23; pJet.add(fanb);
-for(var fb=0;fb<7;fb++){
-  var v = bx(16,1.4,5, MAT.alu);
-  var fa = fb/7*Math.PI*2;
-  v.position.set(Math.cos(fa)*8, 24, Math.sin(fa)*8); v.rotation.y = fa; pJet.add(v);
-}
+  facts:[['ROLE','Autonomy + vision'],['LINK','MAVLink to FC'],['CAMERA','USB 3 only'],['COOLING','Active fan']]});
+pJet.add(bx(68,9,66,MAT.pcbK)); var sink=bx(60,15,60,MAT.alu);sink.position.y=12;pJet.add(sink);
+for(var fi=0;fi<11;fi++){var f2=bx(58,4,1.6,MAT.alu);f2.position.set(0,17,-26+fi*5.2);pJet.add(f2);}
+var fanb=cy(20,20,7,MAT.plastic,24);fanb.position.y=23;pJet.add(fanb);
+for(var fb=0;fb<7;fb++){var v=bx(16,1.4,5,MAT.alu),fa=fb/7*Math.PI*2;v.position.set(Math.cos(fa)*8,24,Math.sin(fa)*8);v.rotation.y=fa;pJet.add(v);}
 
-var pTel = part({
-  id:'telemetry', name:'Telemetry radio', pn:'SiK · 915 MHz, 100 mW', cat:'COMMS',
-  pos:[-50,44,-48], dir:[-0.5,1,-0.5], dist:240, spot:true, spotAt:[0,16,0],
-  desc:'The data link to your laptop running QGroundControl. Not to be confused with the RC receiver: the telemetry radio carries commands and status to the ground station, while the receiver listens to the handheld transmitter.',
-  facts:[['BAND','915 MHz'],['POWER','100 mW'],['TALKS TO','Ground station']]
-});
-pTel.add(bx(46,14,30, MAT.plastic));
+var pTel=part({id:'telemetry',name:'Telemetry radio',pn:'SiK · 915 MHz, 100 mW',cat:'COMMS',pos:[-50,44,-48],dir:[-.5,1,-.5],dist:240,spot:true,spotAt:[0,16,0],step:9,
+  desc:'The data link to a laptop running QGroundControl. Not the RC receiver: the telemetry radio carries commands and status to the ground station over a serial UART, while the receiver listens to the handheld transmitter.',
+  facts:[['BAND','915 MHz'],['POWER','100 mW'],['PORT','TELEM1 UART'],['TALKS TO','Ground station']]});
+pTel.add(bx(46,14,30,MAT.plastic)); var tl=bx(3,1,3,MAT.ledG);tl.position.set(18,7.5,10);pTel.add(tl);
 
-var pAnt = part({
-  id:'antennas', name:'Antennas', pn:'SMA whip', cat:'COMMS',
-  pos:[6,86,-30], dir:[0,1,-0.3], dist:250, spot:true, spotAt:[0,46,0],
-  desc:'Screw onto gold SMA studs on the board. Easy to mistake for the GPS — the difference is the connector: antennas thread onto a stud, the GPS plugs in with a thin JST-GH cable and sits on its own mast.',
-  facts:[['CONNECTOR','SMA'],['COUNT','2']]
-});
-[[0,0],[-28,10]].forEach(function(p){
-  var w = cy(3.2,3.2,96, MAT.plastic, 12);
-  w.position.set(p[0],48,p[1]); pAnt.add(w);
-});
+var pRx=part({id:'receiver',name:'RC receiver',pn:'ELRS / CRSF',cat:'COMMS',pos:[-54,42,44],dir:[-.5,1,.6],dist:240,spot:true,spotAt:[0,14,0],step:9,
+  desc:'Listens to the handheld TX16S transmitter and hands stick positions to the flight controller as a serial stream. Bound to one transmitter only. Its failsafe behaviour — what the aircraft does when this link drops — is one of the first things to configure.',
+  facts:[['LINK','To TX16S'],['PROTOCOL','CRSF serial'],['PORT','RC IN'],['CONFIGURE','Failsafe first']]});
+pRx.add(bx(24,8,16,MAT.pcbK)); var rxa=cy(1.2,1.2,50,MAT.plastic,8);rxa.rotation.x=-.5;rxa.position.set(-6,20,18);pRx.add(rxa);
 
-var pGps = part({
-  id:'gps', name:'GPS / compass', pn:'DroneCAN M9N', cat:'NAVIGATION',
-  pos:[62,100,-66], dir:[0.5,0.9,-0.5], dist:260, spot:true, spotAt:[0,26,0],
-  desc:'u-blox M9N receiver with the magnetometer inside the same housing. It sits high on a mast deliberately: the compass needs distance from the power wiring, or it reads the aircraft\'s own current rather than the earth\'s field. Indoors it will never get a fix, which is exactly why the optical flow sensor is aboard.',
-  facts:[['RECEIVER','u-blox M9N'],['BUS','DroneCAN'],['CONTAINS','GNSS + compass'],['INDOORS','No fix']]
-});
-var mst = cy(4,4,116, MAT.tube, 12); mst.position.y = -30; pGps.add(mst);
-var brk = bx(22,5,26, MAT.anod); brk.position.y = -86; pGps.add(brk);
-var dome = new THREE.Mesh(new THREE.SphereGeometry(28,30,16,0,Math.PI*2,0,Math.PI/2.5), MAT.plastic);
-pGps.add(dome);
-var dbase = cy(28,28,7, MAT.plastic, 30); dbase.position.y = -3; pGps.add(dbase);
-var arw = bx(9,1,15, MAT.white); arw.position.set(0,10,-5); pGps.add(arw);
+var pBuz=part({id:'buzzer',name:'Buzzer + safety switch',pn:'Holybro module',cat:'COMPUTE',pos:[20,42,-56],dir:[.3,1,-.6],dist:220,spot:true,spotAt:[0,12,0],step:9,
+  desc:'Two jobs in one small housing. The buzzer sounds arming tones, warnings and the lost-aircraft alarm. The safety switch must be pressed and held before the motors can be armed — a physical interlock that stops a stray stick input spinning the props.',
+  facts:[['BUZZER','Tones + alarms'],['SWITCH','Arm interlock'],['PORT','GPS2 / SAFETY']]});
+pBuz.add(bx(34,10,16,MAT.plastic)); var bz=cy(4,4,3,MAT.red,14);bz.position.set(-8,6.5,0);pBuz.add(bz);
+var swl=bx(3,1,3,MAT.ledR);swl.position.set(8,5.5,0);pBuz.add(swl);
 
-/* ===========================================================
-   PAYLOAD / SENSING
-   =========================================================== */
-var pRs = part({
-  id:'realsense', name:'Depth camera', pn:'Intel RealSense', cat:'SENSING',
-  pos:[84,-56,0], dir:[1,-0.2,0], dist:230, grp:'payload', spot:true, spotAt:[0,-20,0],
+var pAnt=part({id:'antennas',name:'Antennas',pn:'SMA whip',cat:'COMMS',pos:[6,86,-30],dir:[0,1,-.3],dist:250,spot:true,spotAt:[0,46,0],step:9,
+  desc:'Screw onto gold SMA studs on the telemetry radio. Easy to mistake for the GPS — the difference is the connector: antennas thread onto a stud, the GPS plugs in with a thin JST-GH cable and sits on its own mast.',
+  facts:[['CONNECTOR','SMA'],['COUNT','2'],['FOR','Telemetry']]});
+[[0,0],[-28,10]].forEach(function(p){var w=cy(3.2,3.2,96,MAT.plastic,12);w.position.set(p[0],48,p[1]);pAnt.add(w);
+  var st=cy(3.6,3.6,6,MAT.gold,12);st.position.set(p[0],-2,p[1]);pAnt.add(st);});
+
+var pGps=part({id:'gps',name:'GPS / compass',pn:'DroneCAN M9N',cat:'NAVIGATION',pos:[62,100,-66],dir:[.5,.9,-.5],dist:260,spot:true,spotAt:[0,26,0],step:10,
+  desc:'u-blox M9N receiver with the magnetometer in the same housing. It sits high on a mast deliberately: the compass needs distance from the power wiring, or it reads the aircraft\'s own current rather than the earth\'s field. Connects over the CAN bus. Indoors it will never get a fix — that is why the optical flow sensor is aboard.',
+  facts:[['RECEIVER','u-blox M9N'],['BUS','DroneCAN'],['CONTAINS','GNSS + compass'],['INDOORS','No fix']]});
+var mst=cy(4,4,116,MAT.tube,12);mst.position.y=-30;pGps.add(mst);
+var brk=bx(22,5,26,MAT.anod);brk.position.y=-86;pGps.add(brk);
+pGps.add(new THREE.Mesh(new THREE.SphereGeometry(28,30,16,0,Math.PI*2,0,Math.PI/2.5),MAT.plastic));
+var dbase=cy(28,28,7,MAT.plastic,30);dbase.position.y=-3;pGps.add(dbase);
+var arw=bx(9,1,15,MAT.white);arw.position.set(0,10,-5);pGps.add(arw);
+var gl1=cy(2,2,1,MAT.ledG,10);gl1.position.set(14,9,8);pGps.add(gl1);
+
+/* ============ PAYLOAD ============ */
+var pRs=part({id:'realsense',name:'Depth camera',pn:'Intel RealSense',cat:'SENSING',pos:[84,-56,0],dir:[1,-.2,0],dist:230,grp:'payload',spot:true,spotAt:[0,-20,0],step:11,
   desc:'Forward-facing stereo depth camera — it measures distance, not just colour. It must go into a blue USB 3 port on the Jetson; USB 2 makes the depth stream fail in confusing ways. Keep the cable short and zip-tied: a loose USB lead near a spinning propeller is a bad afternoon.',
-  facts:[['TYPE','Stereo depth'],['HOST','Jetson, USB 3'],['FACES','Forward'],['CABLE','Short and secured']]
-});
-pRs.add(bx(25,16,110, MAT.white));
-pRs.add(bx(19,11,104, MAT.glass));
-[-36,-12,14,38].forEach(function(z){
-  var ln = cy(5.5,5.5,3, MAT.glass, 18);
-  ln.rotation.z = Math.PI/2; ln.position.set(11,1,z); pRs.add(ln);
-});
+  facts:[['TYPE','Stereo depth'],['HOST','Jetson, USB 3'],['FACES','Forward'],['CABLE','Short, secured']]});
+pRs.add(bx(25,16,110,MAT.white)); pRs.add(bx(19,11,104,MAT.glass));
+[-36,-12,14,38].forEach(function(z){var ln=cy(5.5,5.5,3,MAT.glass,18);ln.rotation.z=Math.PI/2;ln.position.set(11,1,z);pRs.add(ln);});
 
-var pFlow = part({
-  id:'flow', name:'Optical flow sensor', pn:'ATK-PMW3901', cat:'SENSING',
-  pos:[-36,-72,0], dir:[-0.3,-1,0], dist:200, grp:'payload', spot:true, spotAt:[0,-16,0],
-  desc:'Points straight down and measures how the ground slides beneath the aircraft. This is what makes position hold possible indoors where GPS cannot reach. It needs a textured floor to track against — the patterned carpet in your test room is close to ideal — and really wants a rangefinder beside it, because flow alone cannot tell "fast and high" from "slow and low".',
-  facts:[['SENSOR','PMW3901'],['FACES','Down'],['ENABLES','Indoor position hold'],['NEEDS','Texture + rangefinder']]
-});
-pFlow.add(bx(26,4,20, MAT.pcbK));
-var flens = cy(4.5,4.5,5, MAT.glass, 16); flens.position.y = -4; pFlow.add(flens);
+var pFlow=part({id:'flow',name:'Optical flow sensor',pn:'ATK-PMW3901',cat:'SENSING',pos:[-36,-72,0],dir:[-.3,-1,0],dist:200,grp:'payload',spot:true,spotAt:[0,-16,0],step:11,
+  desc:'Points straight down and measures how the ground slides beneath the aircraft — this is what makes position hold possible indoors. It needs a textured floor to track against, and really wants a rangefinder beside it, because flow alone cannot tell "fast and high" from "slow and low".',
+  facts:[['SENSOR','PMW3901'],['FACES','Down'],['ENABLES','Indoor hold'],['NEEDS','Texture + rangefinder']]});
+pFlow.add(bx(26,4,20,MAT.pcbK)); var fl=cy(4.5,4.5,5,MAT.glass,16);fl.position.y=-4;pFlow.add(fl);
 
-/* ===========================================================
-   WIRING
-   =========================================================== */
-function wire(pts, col, rad){
-  var cv = new THREE.CatmullRomCurve3(pts.map(function(p){ return new THREE.Vector3(p[0],p[1],p[2]); }));
-  var geo = new THREE.TubeGeometry(cv, 42, rad||2.2, 8, false);
-  wires.add(new THREE.Mesh(geo, new THREE.MeshStandardMaterial({color:col, metalness:.2, roughness:.55})));
+/* ============ GROUND KIT · bench beside the aircraft ============ */
+var KZ=-640, KY=-232;
+(function(){
+  var t=new THREE.Mesh(new THREE.BoxGeometry(760,10,330),M(0xd9d6cc,.05,.9)); t.position.set(0,KY-5,KZ); root.add(t); t.userData.kitTable=true;
+  shadow(900,500,0,KZ,KY-6);
+})();
+function kit(o){ o.kit=true; o.grp='kit'; o.dir=o.dir||[0,1,0]; o.dist=o.dist||0; o.step=o.step||0; return part(o); }
+
+var kTx=kit({id:'tx16s',name:'Transmitter',pn:'RadioMaster TX16S',cat:'GROUND KIT',pos:[-270,KY+32,KZ-60],spot:true,spotAt:[0,40,0],
+  desc:'The handheld radio you fly with. Runs EdgeTX. Its stick positions go over the air to the receiver on the aircraft. Set a flight-mode switch and a kill switch here before the first hover, and never fly with it below half charge — the 18650 cells in the Efest charger are for this.',
+  facts:[['FIRMWARE','EdgeTX'],['LINK','To RC receiver'],['CELLS','2 × 18650'],['SET','Kill switch']]});
+kTx.add(bx(180,52,210,MAT.carbon));
+var scr=bx(120,2,80,MAT.screenOn);scr.position.set(0,27,60);kTx.add(scr);
+[[-56,-30],[56,-30]].forEach(function(p){var gb=cy(34,34,3,MAT.plastic,30);gb.position.set(p[0],27.5,p[1]);kTx.add(gb);
+  var stk=cy(3,3,28,MAT.silver,10);stk.position.set(p[0],42,p[1]);kTx.add(stk);});
+var ant=cy(3,3,150,MAT.plastic,10);ant.rotation.z=.4;ant.position.set(-60,92,-100);kTx.add(ant);
+for(var sw=0;sw<6;sw++){var s2=cy(1.8,1.8,14,MAT.silver,8);s2.position.set(-70+sw*28,33,-96);kTx.add(s2);}
+
+var kHota=kit({id:'hota',name:'Flight battery charger',pn:'HOTA S6 · dual smart charger',cat:'GROUND KIT',pos:[-30,KY+22,KZ+40],spot:true,spotAt:[0,30,0],
+  desc:'400 W AC / 650 W DC balance charger for the flight pack — two packs at a time. Always charge in balance mode with both the XT90 lead and the balance plug connected, at 1C or below, inside a fireproof bag, with someone in the room.',
+  facts:[['MODE','Balance charge'],['RATE','≤ 1C'],['LEADS','Main + balance'],['NEVER','Unattended']]});
+kHota.add(bx(110,44,120,M(0x3b3f46,.5,.4)));
+var hs=bx(64,2,50,MAT.screenOn);hs.position.set(0,23,-20);kHota.add(hs);
+var hk=cy(6,6,6,MAT.red,16);hk.position.set(36,25,38);kHota.add(hk);
+var hb=cy(5,5,4,MAT.plastic,16);hb.position.set(-36,24,38);kHota.add(hb);
+
+var kEf=kit({id:'efest',name:'Cell charger + 18650s',pn:'Efest LUC V6',cat:'GROUND KIT',pos:[150,KY+14,KZ+50],spot:true,spotAt:[0,22,0],
+  desc:'A six-bay charger and four 3000 mAh lithium-ion cells. These power the transmitter, not the aircraft — different chemistry, different charger. Keep them stored apart from the flight pack so nobody grabs the wrong charger under time pressure.',
+  facts:[['FOR','Transmitter'],['CELLS','4 × 18650'],['NOT FOR','Flight pack']]});
+kEf.add(bx(150,28,100,M(0x1c1f23,.4,.5)));
+var es=bx(120,2,20,MAT.screen);es.position.set(0,15,-34);kEf.add(es);
+for(var ce=0;ce<4;ce++){var cell=cy(9,9,65,MAT.lipoB,18);cell.rotation.x=Math.PI/2;cell.position.set(-52+ce*23,16,10);kEf.add(cell);}
+
+var kUart=kit({id:'uart',name:'USB-to-UART adapter',pn:'FTDI · V1.3',cat:'GROUND KIT',pos:[290,KY+6,KZ-70],spot:true,spotAt:[0,12,0],
+  desc:'Lets a laptop talk to one of the flight controller\'s serial ports over USB-C. Useful for reading console output and for peripherals that do not have their own USB. Not needed for QGroundControl over the main USB port.',
+  facts:[['CHIP','FTDI'],['HOST','USB-C'],['TARGET','FC UART']]});
+kUart.add(bx(36,4,22,MAT.pcbK)); var uc=bx(9,4,7,MAT.silver);uc.position.set(-20,1,0);kUart.add(uc);
+[[10,-7],[10,7]].forEach(function(p){var j=bx(5,4,4,MAT.white);j.position.set(p[0],3,p[1]);kUart.add(j);});
+
+var kCam=kit({id:'hbv',name:'CSI camera + ribbon',pn:'HBV FPC camera · JT-PX ribbon',cat:'GROUND KIT',pos:[300,KY+4,KZ+30],spot:true,spotAt:[0,14,0],
+  desc:'A small colour camera on an orange flexible ribbon, meant for a Pi-style CSI port. Not fitted to the aircraft yet — it is an option for a lightweight colour feed alongside the RealSense depth stream. Ribbons tear easily; keep it in its bag until it has a mount.',
+  facts:[['INTERFACE','CSI ribbon'],['STATUS','Spare'],['HANDLE','Carefully']]});
+kCam.add(bx(24,3,24,MAT.pcbK)); var lens=cy(5,5,4,MAT.glass,16);lens.position.y=3;kCam.add(lens);
+var rib=bx(120,.8,14,MAT.fpc);rib.position.set(-72,0,0);kCam.add(rib);
+
+var kSp=kit({id:'spares',name:'Connector spares + hardware',pn:'XT60 pairs · M2.5 screws · VHB · 3M tape',cat:'GROUND KIT',pos:[250,KY+4,KZ+110],spot:true,spotAt:[0,14,0],
+  desc:'Spare XT60 pairs for making up leads, M2.5 × 6 countersunk screws and collet adapters for the props, a red VHB pad for the GPS mast, and 3M 9448A double-sided tape for mounting light boards. Double-sided tape is for holding things in position, never for holding things together — and never under a flight controller.',
+  facts:[['XT60','Spare pairs'],['SCREWS','M2.5 × 6'],['TAPE','3M 9448A'],['PAD','3M VHB']]});
+[[-30,0],[-14,4],[2,-2]].forEach(function(p){var x=bx(10,9,8,MAT.yellow);x.position.set(p[0],4,p[1]);kSp.add(x);});
+var vhb=cy(12,12,1.5,MAT.red,20);vhb.position.set(28,1,-8);kSp.add(vhb);
+for(var sc=0;sc<6;sc++){var scw=cy(1.3,1.3,6,MAT.silver,8);scw.rotation.z=Math.PI/2;scw.position.set(16+sc*5,1,12);kSp.add(scw);}
+var tp=bx(40,2,26,MAT.white);tp.position.set(44,1,14);kSp.add(tp);
+
+/* ============ WIRING with connection metadata ============ */
+var WCOL={power:0xa8492f, gnd:0x24272c, can:0x1f6b52, pwm:0xb07d2a, usb:0x5f6396, ser:0x2f8ba8, phase:0xc9a227};
+function wire(pts,type,a,b,rad){
+  var cv=new THREE.CatmullRomCurve3(pts.map(function(p){return new THREE.Vector3(p[0],p[1],p[2]);}));
+  var mesh=new THREE.Mesh(new THREE.TubeGeometry(cv,44,rad||2.2,8,false),new THREE.MeshStandardMaterial({color:WCOL[type],metalness:.2,roughness:.55}));
+  mesh.userData={type:type,a:a,b:b,base:WCOL[type]}; wireG.add(mesh); WIRES.push(mesh); return mesh;
 }
-/* battery to power module to PDB */
-wire([[84,-98,0],[40,-78,26],[-64,-40,44]], 0xa8492f, 3.0);
-wire([[84,-98,8],[40,-84,34],[-64,-46,48]], 0x22252a, 3.0);
-wire([[-64,-4,42],[-40,2,26],[-8,6,12]], 0xa8492f, 2.8);
-wire([[-64,-10,38],[-40,-3,20],[-8,4,4]], 0x22252a, 2.8);
-/* PDB out to each arm ESC */
-ANG.forEach(function(deg){
-  var a=deg*Math.PI/180, ux=Math.cos(a), uz=Math.sin(a);
-  wire([[ux*22,10,uz*22],[ux*70,15,uz*70],[ux*150,16.5,uz*150]], 0xa8492f, 1.9);
-  wire([[ux*18,10,uz*18],[ux*66,14,uz*66],[ux*146,16.5,uz*146]], 0x22252a, 1.9);
-  wire([[ux*150,18,uz*150],[ux*70,20,uz*70],[-58,37,-8]], 0xb07d2a, 1.2);
+/* battery → PM08 → PDB */
+wire([[84,-98,0],[40,-78,26],[-64,-40,44]],'power','battery','pm08',3.0);
+wire([[84,-98,8],[40,-84,34],[-64,-46,48]],'gnd','battery','pm08',3.0);
+wire([[-64,-4,42],[-40,2,26],[-8,6,12]],'power','pm08','pdb',2.8);
+wire([[-64,-10,38],[-40,-3,20],[-8,4,4]],'gnd','pm08','pdb',2.8);
+wire([[-64,-14,48],[-46,10,36],[-58,38,-2]],'can','pm08','carrier',1.5);
+/* PDB → XT30 → ESC → motor, and ESC signal to FC */
+ANG.forEach(function(deg,i){
+  var a=deg*Math.PI/180,ux=Math.cos(a),uz=Math.sin(a);
+  wire([[ux*22,10,uz*22],[ux*44,11,uz*44],[ux*60,10,uz*60]],'power','pdb','xt30-'+i,1.9);
+  wire([[ux*18,10,uz*18],[ux*40,9,uz*40],[ux*56,9,uz*56]],'gnd','pdb','xt30-'+i,1.9);
+  wire([[ux*64,10,uz*64],[ux*120,15,uz*120],[ux*(ARM_R-86),16.5,uz*(ARM_R-86)]],'power','xt30-'+i,'esc-'+i,1.6);
+  wire([[ux*(ARM_R-62+26),16.5,uz*(ARM_R-62+26)],[ux*(ARM_R-30),18,uz*(ARM_R-30)],[ux*(ARM_R-24),28,uz*(ARM_R-24)]],'phase','esc-'+i,'motor-'+i,1.3);
+  wire([[ux*(ARM_R-62),18,uz*(ARM_R-62)],[ux*80,21,uz*80],[-58,37,-8+i*4]],'pwm','esc-'+i,'carrier',1.15);
 });
-/* CAN bus: GPS and power module */
-wire([[62,70,-66],[44,50,-46],[-52,40,-28]], 0x1f6b52, 1.5);
-wire([[-64,-14,48],[-46,10,36],[-58,38,-2]], 0x1f6b52, 1.5);
-/* telemetry */
-wire([[-50,38,-48],[-54,37,-36],[-60,38,-20]], 0x1f6b52, 1.4);
-/* RealSense USB up to the Jetson */
-wire([[84,-48,0],[80,-6,22],[46,44,26],[34,50,10]], 0x6b6f9c, 1.8);
-/* flow sensor */
-wire([[-36,-68,0],[-40,-30,-8],[-58,36,-16]], 0x6b6f9c, 1.3);
+/* CAN, serial, USB */
+wire([[62,70,-66],[44,50,-46],[-52,40,-28]],'can','gps','carrier',1.5);
+wire([[-50,38,-48],[-56,37,-34],[-60,38,-20]],'ser','telemetry','carrier',1.4);
+wire([[-54,38,44],[-58,37,30],[-60,38,16]],'ser','receiver','carrier',1.3);
+wire([[20,37,-56],[-20,38,-50],[-58,38,-38]],'ser','buzzer','carrier',1.1);
+wire([[84,-48,0],[80,-6,22],[46,44,26],[34,50,10]],'usb','realsense','jetson',1.8);
+wire([[-36,-68,0],[-40,-30,-8],[-58,36,-16]],'usb','flow','carrier',1.3);
+wire([[6,84,-30],[-20,60,-40],[-46,50,-46]],'ser','antennas','telemetry',1.2);
+wire([[-22,84,-20],[-36,62,-44],[-48,50,-50]],'ser','antennas','telemetry',1.2);
 
-/* ===========================================================
-   HOTSPOTS
-   =========================================================== */
-var spots = {};
-PARTS.forEach(function(p){
-  if(!p.userData.spot) return;
-  var el = document.createElement('div');
-  el.className = 'spot';
-  el.innerHTML = String(p.userData.spot).padStart(2,'0') + '<div class="nm">'+p.userData.name+'</div>';
-  el.addEventListener('click', function(ev){ ev.stopPropagation(); pick(p); });
-  spotLayer.appendChild(el);
-  spots[p.userData.id] = el;
-});
+/* ============ BUILD SEQUENCE ============ */
+var STEPS=[
+ {t:'Lower plate and arm hinges',p:'Start with the floor. The four folding clamps bolt to the corners of the lower carbon plate — this is the only part of the build where alignment is unforgiving, so square them up before the screws go tight.'},
+ {t:'Power distribution board',p:'The PDB sits in the centre of the lower plate. One XT60 in from the battery, six XT60s out. Mount it now, while there is nothing above it to work around.'},
+ {t:'Arms, ESCs and XT30 plugs',p:'Each arm slides into its hinge and locks with the fluted collar. The ESC is already inside the tube; its power lead exits at the root and plugs into a PDB output with an XT30. Four arms, four plugs, no soldering.'},
+ {t:'Motors',p:'Motor mounts clamp to the arm tips. Three phase leads from each ESC bullet-connect to the motor. Direction is set by which two leads you swap — you will verify this with props off before anything flies.'},
+ {t:'Standoffs and upper plate',p:'Thirty-millimetre standoffs and the upper plate close the frame cavity. Everything you just wired is now inside the sandwich; the top surface is a clean deck for the electronics.'},
+ {t:'Landing gear',p:'The A-frame legs bolt beneath the lower plate and splay outward to the skids. Everything mounted underneath from here on has to fit inside this envelope.'},
+ {t:'Battery tray and power module',p:'The tray hangs on four posts below the frame. The PM08 power module goes inline on the battery lead so voltage and current are measured before power reaches the PDB, and its CAN cable runs up to the carrier board.'},
+ {t:'Carrier board and Jetson',p:'The PAB carrier bolts to the upper plate; the Jetson module and its heatsink drop onto it. The flight controller is integrated here — the JST-GH sockets along the edge are its I/O.'},
+ {t:'Radios, receiver, buzzer',p:'The telemetry radio and its two antennas, the RC receiver, and the buzzer with safety switch all mount to the upper deck and connect to the carrier over short serial leads.'},
+ {t:'GPS mast',p:'The M9N goes up on its mast on a VHB pad, as far from the power wiring as the frame allows. It joins the CAN bus alongside the power module.'},
+ {t:'Payload and battery',p:'The RealSense bolts to the front of the tray and runs USB 3 up to the Jetson. The optical flow sensor points down from the tray. The battery straps in last — and stays unplugged until the bench work is finished.'},
+ {t:'Propellers',p:'Last on, first off. Match each prop\'s handedness to its motor direction, seat the collet, torque the M2.5 screws, and check for any cable inside a prop arc before the first power-up.'}
+];
+var NSTEP=STEPS.length;
 
-/* ===========================================================
-   CAMERA  (slower, heavier damping)
-   =========================================================== */
-var tgt = new THREE.Vector3(0,-10,0);
-var cur = {r:1320, th:0.78, ph:1.14};
-var aim = {r:1320, th:0.78, ph:1.14, t:tgt.clone()};
-var EASE = 0.055;                 // slower settle
-var drag=false, pan=false, lx=0, ly=0, dx0=0, dy0=0, spin=false;
+/* ============ HOTSPOTS ============ */
+var spots={};
+PARTS.forEach(function(p){ if(!p.userData.spot) return;
+  var el=document.createElement('div'); el.className='spot'+(p.userData.kit?' k':'');
+  el.innerHTML=String(p.userData.spot).padStart(2,'0')+'<div class="nm">'+p.userData.name+'</div>';
+  el.addEventListener('click',function(ev){ev.stopPropagation();pick(p);}); spotLayer.appendChild(el); spots[p.userData.id]=el; });
 
-function camStep(){
-  cur.r  += (aim.r  - cur.r ) * EASE;
-  cur.th += (aim.th - cur.th) * EASE;
-  cur.ph += (aim.ph - cur.ph) * EASE;
-  tgt.lerp(aim.t, EASE);
-  var ph = Math.max(0.06, Math.min(Math.PI-0.06, cur.ph));
-  camera.position.set(
-    tgt.x + cur.r*Math.sin(ph)*Math.cos(cur.th),
-    tgt.y + cur.r*Math.cos(ph),
-    tgt.z + cur.r*Math.sin(ph)*Math.sin(cur.th)
-  );
-  camera.lookAt(tgt);
+/* ============ CAMERA ============ */
+var tgt=new THREE.Vector3(0,-10,0), cur={r:1360,th:.78,ph:1.14}, aim={r:1360,th:.78,ph:1.14,t:tgt.clone()}, EASE=.055;
+var drag=false,pan=false,lx=0,ly=0,dx0=0,dy0=0,spin=false;
+function camStep(){ cur.r+=(aim.r-cur.r)*EASE; cur.th+=(aim.th-cur.th)*EASE; cur.ph+=(aim.ph-cur.ph)*EASE; tgt.lerp(aim.t,EASE);
+  var ph=Math.max(.06,Math.min(Math.PI-.06,cur.ph));
+  camera.position.set(tgt.x+cur.r*Math.sin(ph)*Math.cos(cur.th),tgt.y+cur.r*Math.cos(ph),tgt.z+cur.r*Math.sin(ph)*Math.sin(cur.th)); camera.lookAt(tgt); }
+var cv2=renderer.domElement;
+cv2.addEventListener('pointerdown',function(e){drag=true;pan=(e.button===2);lx=dx0=e.clientX;ly=dy0=e.clientY;cv2.setPointerCapture(e.pointerId);});
+cv2.addEventListener('pointerup',function(e){drag=false;pan=false;try{cv2.releasePointerCapture(e.pointerId);}catch(err){}});
+cv2.addEventListener('pointermove',function(e){ if(!drag)return; var ddx=e.clientX-lx,ddy=e.clientY-ly; lx=e.clientX;ly=e.clientY;
+  if(pan){var rt=new THREE.Vector3().setFromMatrixColumn(camera.matrix,0),up=new THREE.Vector3().setFromMatrixColumn(camera.matrix,1);
+    aim.t.addScaledVector(rt,-ddx*cur.r*.0009); aim.t.addScaledVector(up,ddy*cur.r*.0009);}
+  else{aim.th-=ddx*.0034; aim.ph-=ddy*.0034; aim.ph=Math.max(.08,Math.min(Math.PI-.08,aim.ph));} });
+cv2.addEventListener('wheel',function(e){e.preventDefault();var st=Math.max(-1,Math.min(1,e.deltaY/100))*.055;aim.r=Math.max(330,Math.min(3400,aim.r*(1+st)));},{passive:false});
+cv2.addEventListener('contextmenu',function(e){e.preventDefault();});
+
+/* ============ SELECTION + CONNECTION TRACE ============ */
+var sel=null, card=document.getElementById('card');
+var hiMat=new THREE.MeshStandardMaterial({color:0x1f6b52,emissive:0x0d3a2b,emissiveIntensity:.35,metalness:.4,roughness:.42});
+function paint(gp,on){gp.traverse(function(o){if(!o.isMesh)return; if(on){if(!o.userData._m)o.userData._m=o.material;o.material=hiMat;}else if(o.userData._m){o.material=o.userData._m;}});}
+function traceWires(id){
+  WIRES.forEach(function(w){ var hit=id&&(w.userData.a===id||w.userData.b===id);
+    w.material.emissive.setHex(hit?w.userData.base:0x000000); w.material.emissiveIntensity=hit?.55:0;
+    w.material.transparent=!!id&&!hit; w.material.opacity=(id&&!hit)?.18:1; });
 }
-
-var cv2 = renderer.domElement;
-cv2.addEventListener('pointerdown', function(e){
-  drag = true; pan = (e.button === 2);
-  lx = dx0 = e.clientX; ly = dy0 = e.clientY;
-  cv2.setPointerCapture(e.pointerId);
-});
-cv2.addEventListener('pointerup', function(e){
-  drag = false; pan = false;
-  try{ cv2.releasePointerCapture(e.pointerId); }catch(err){}
-});
-cv2.addEventListener('pointermove', function(e){
-  if(!drag) return;
-  var ddx = e.clientX - lx, ddy = e.clientY - ly;
-  lx = e.clientX; ly = e.clientY;
-  if(pan){
-    var rt = new THREE.Vector3().setFromMatrixColumn(camera.matrix,0);
-    var up = new THREE.Vector3().setFromMatrixColumn(camera.matrix,1);
-    aim.t.addScaledVector(rt, -ddx*cur.r*0.0009);
-    aim.t.addScaledVector(up,  ddy*cur.r*0.0009);
-  } else {
-    aim.th -= ddx*0.0034;          // gentler orbit
-    aim.ph -= ddy*0.0034;
-    aim.ph = Math.max(0.08, Math.min(Math.PI-0.08, aim.ph));
-  }
-});
-cv2.addEventListener('wheel', function(e){
-  e.preventDefault();
-  var step = Math.max(-1, Math.min(1, e.deltaY/100)) * 0.055;   // slow, clamped zoom
-  aim.r = Math.max(330, Math.min(3000, aim.r * (1+step)));
-}, {passive:false});
-cv2.addEventListener('contextmenu', function(e){ e.preventDefault(); });
-
-/* ===========================================================
-   SELECTION
-   =========================================================== */
-var sel = null, card = document.getElementById('card');
-var hiMat = new THREE.MeshStandardMaterial({color:0x1f6b52, emissive:0x0d3a2b,
-  emissiveIntensity:.35, metalness:.4, roughness:.42});
-
-function paint(gp, on){
-  gp.traverse(function(o){
-    if(!o.isMesh) return;
-    if(on){ if(!o.userData._m) o.userData._m = o.material; o.material = hiMat; }
-    else if(o.userData._m){ o.material = o.userData._m; }
-  });
-}
+var TYPENAME={power:'Battery power',gnd:'Ground return',can:'CAN bus',pwm:'ESC signal',usb:'USB / data',ser:'Serial',phase:'Motor phase'};
 function pick(p){
-  if(sel) { paint(sel,false); if(spots[sel.userData.id]) spots[sel.userData.id].classList.remove('on'); }
-  sel = p; paint(p,true);
-  if(spots[p.userData.id]) spots[p.userData.id].classList.add('on');
-  var d = p.userData;
-  document.getElementById('cCat').textContent  = d.cat;
-  document.getElementById('cName').textContent = d.name;
-  document.getElementById('cPn').textContent   = d.pn;
-  document.getElementById('cDesc').textContent = d.desc;
-  var fx = document.getElementById('cFacts'); fx.innerHTML = '';
-  d.facts.forEach(function(f){
-    var el = document.createElement('div');
-    el.innerHTML = '<span class="mono">'+f[0]+'</span><b>'+f[1]+'</b>';
-    fx.appendChild(el);
-  });
+  if(sel){paint(sel,false);if(spots[sel.userData.id])spots[sel.userData.id].classList.remove('on');}
+  sel=p; paint(p,true); if(spots[p.userData.id])spots[p.userData.id].classList.add('on'); traceWires(p.userData.id);
+  var d=p.userData;
+  document.getElementById('cCat').textContent=d.cat; document.getElementById('cName').textContent=d.name;
+  document.getElementById('cPn').textContent=d.pn; document.getElementById('cDesc').textContent=d.desc;
+  var fx=document.getElementById('cFacts'); fx.innerHTML='';
+  d.facts.forEach(function(f){var el=document.createElement('div');el.innerHTML='<span class="mono">'+f[0]+'</span><b>'+f[1]+'</b>';fx.appendChild(el);});
+  var cn=document.getElementById('cConn'); cn.innerHTML=''; var seen={};
+  WIRES.forEach(function(w){ var u=w.userData; if(u.a!==d.id&&u.b!==d.id)return; var other=u.a===d.id?u.b:u.a; var key=other+'|'+u.type; if(seen[key])return; seen[key]=1;
+    var o=BYID[other]; if(!o)return; var row=document.createElement('div');
+    row.innerHTML='<i style="background:#'+u.base.toString(16).padStart(6,'0')+'"></i>'+TYPENAME[u.type]+' → '+o.userData.name;
+    row.addEventListener('click',function(){pick(o);}); cn.appendChild(row); });
+  if(cn.children.length){var h=document.createElement('h4');h.className='mono';h.textContent='CONNECTS TO';cn.insertBefore(h,cn.firstChild);}
   card.classList.add('show');
 }
-function drop(){
-  if(sel){ paint(sel,false); if(spots[sel.userData.id]) spots[sel.userData.id].classList.remove('on'); }
-  sel = null; card.classList.remove('show');
-}
-document.getElementById('cardX').addEventListener('click', drop);
+function drop(){ if(sel){paint(sel,false);if(spots[sel.userData.id])spots[sel.userData.id].classList.remove('on');} sel=null; traceWires(null); card.classList.remove('show'); }
+document.getElementById('cardX').addEventListener('click',drop);
+cv2.addEventListener('click',function(e){ if(Math.abs(e.clientX-dx0)>4||Math.abs(e.clientY-dy0)>4)return;
+  ptr.x=(e.clientX/innerWidth)*2-1; ptr.y=-(e.clientY/innerHeight)*2+1; ray.setFromCamera(ptr,camera);
+  var hit=ray.intersectObjects(root.children,true);
+  for(var i=0;i<hit.length;i++){var o=hit[i].object; if(o.userData.kitTable)continue; while(o&&PARTS.indexOf(o)===-1)o=o.parent; if(o&&o.visible){pick(o);return;}}
+  drop(); });
 
-cv2.addEventListener('click', function(e){
-  if(Math.abs(e.clientX-dx0)>4 || Math.abs(e.clientY-dy0)>4) return;
-  ptr.x =  (e.clientX/innerWidth)*2 - 1;
-  ptr.y = -(e.clientY/innerHeight)*2 + 1;
-  ray.setFromCamera(ptr, camera);
-  var hit = ray.intersectObjects(root.children, true);
-  for(var i=0;i<hit.length;i++){
-    var o = hit[i].object;
-    while(o && PARTS.indexOf(o) === -1) o = o.parent;
-    if(o && o.visible){ pick(o); return; }
-  }
-  drop();
-});
-
-/* ===========================================================
-   UI
-   =========================================================== */
-var expNow = 0, expAim = 0;
-var slider = document.getElementById('exp'), expv = document.getElementById('expv');
-
-function setExp(v){ expAim = v/100; slider.value = v; expv.textContent = Math.round(v)+'%'; }
-function show(grp,on){ PARTS.forEach(function(p){ if(p.userData.grp===grp) p.visible = on; }); }
-function ghost(on){
-  ['upper','jetson','arm-0','arm-1','arm-2','arm-3'].forEach(function(id){
-    PARTS.forEach(function(p){
-      if(p.userData.id!==id) return;
-      p.traverse(function(o){
-        if(!o.isMesh) return;
-        o.material = o.material.clone();
-        o.material.transparent = on;
-        o.material.opacity = on ? 0.16 : 1;
-        o.material.depthWrite = !on;
-      });
-    });
-  });
-}
+/* ============ MODES ============ */
+var mode='explore', expNow=0, expAim=0, build=0, buildAim=0, playing=false, playT=0;
+var slider=document.getElementById('exp'), expv=document.getElementById('expv'), stepr=document.getElementById('stepr'), stepv=document.getElementById('stepv');
+var capEl=document.getElementById('cap'), playBtn=document.getElementById('play');
+function setExp(v){expAim=v/100;slider.value=v;expv.textContent=Math.round(v)+'%';}
+function show(grp,on){PARTS.forEach(function(p){if(p.userData.grp===grp)p.visible=on;});}
+function ghost(on){['upper','jetson','arm-0','arm-1','arm-2','arm-3'].forEach(function(id){var p=BYID[id];if(!p)return;
+  p.traverse(function(o){if(!o.isMesh)return; if(!o.userData._g)o.userData._g=o.material; o.material=on?o.userData._g.clone():o.userData._g; if(on){o.material.transparent=true;o.material.opacity=.16;o.material.depthWrite=false;}});});}
 function stage(n){
-  document.querySelectorAll('.stg').forEach(function(b){ b.classList.toggle('on', b.dataset.stage===n); });
-  if(n==='assembled'){ setExp(0); ghost(false); show('inside', false); }
-  else if(n==='inside'){ setExp(0); ghost(true); show('inside', true);
-    document.getElementById('cProps').checked = false; show('props', false); }
-  else { setExp(100); ghost(false); show('inside', true); }
+  document.querySelectorAll('.stg').forEach(function(b){b.classList.toggle('on',b.dataset.stage===n);});
+  document.getElementById('expBlock').style.display=n==='build'?'none':'';
+  document.getElementById('buildBlock').style.display=n==='build'?'':'none';
+  capEl.classList.toggle('show',n==='build');
+  if(n==='build'){mode='build'; ghost(false); show('inside',true); if(buildAim>=NSTEP-.01){buildAim=0;build=0;} return;}
+  mode='explore'; playing=false; playBtn.textContent='Play the build'; playBtn.classList.remove('stop');
+  if(n==='assembled'){setExp(0);ghost(false);show('inside',false);}
+  else if(n==='inside'){setExp(0);ghost(true);show('inside',true);document.getElementById('cProps').checked=false;show('props',false);}
+  else{setExp(100);ghost(false);show('inside',true);}
 }
-document.querySelectorAll('.stg').forEach(function(b){
-  b.addEventListener('click', function(){ stage(b.dataset.stage); });
-});
-slider.addEventListener('input', function(){ setExp(+slider.value); });
-show('inside', false);
+document.querySelectorAll('.stg').forEach(function(b){b.addEventListener('click',function(){stage(b.dataset.stage);});});
+slider.addEventListener('input',function(){setExp(+slider.value);});
+stepr.addEventListener('input',function(){buildAim=+stepr.value;playing=false;playBtn.textContent='Play the build';playBtn.classList.remove('stop');});
+show('inside',false);
 
-document.getElementById('cProps').addEventListener('change',function(e){ show('props', e.target.checked); });
-document.getElementById('cBatt').addEventListener('change', function(e){ show('battery', e.target.checked); });
-document.getElementById('cPay').addEventListener('change',  function(e){ show('payload', e.target.checked); });
-document.getElementById('cWires').addEventListener('change',function(e){ wires.visible = e.target.checked; });
-document.getElementById('cSpin').addEventListener('change', function(e){ spin = e.target.checked; });
-document.getElementById('cPoints').addEventListener('change',function(e){
-  spotLayer.style.display = e.target.checked ? 'block' : 'none';
+playBtn.addEventListener('click',function(){
+  if(mode!=='build'){stage('build');}
+  if(buildAim>=NSTEP-.01){buildAim=0;build=0;}
+  playing=!playing; playT=0;
+  playBtn.textContent=playing?'Pause':'Play the build'; playBtn.classList.toggle('stop',playing);
+  if(playing){aim.r=1250;aim.th=.78;aim.ph=1.1;aim.t.set(0,-10,0);}
 });
+document.getElementById('nextS').addEventListener('click',function(){buildAim=Math.min(NSTEP,Math.floor(buildAim+1.001));playing=false;});
+document.getElementById('prevS').addEventListener('click',function(){buildAim=Math.max(0,Math.ceil(buildAim-1.001));playing=false;});
 
-var VIEW = {
-  iso  :{r:1320, th:0.78,        ph:1.14, t:[0,-10,0]},
-  top  :{r:1150, th:-Math.PI/2,  ph:0.12, t:[0,0,0]},
-  side :{r:1200, th:0,           ph:Math.PI/2, t:[0,-30,0]},
-  stack:{r:430,  th:0.62,        ph:0.95, t:[0,40,0]},
-  arm  :{r:400,  th:0.60,        ph:1.05, t:[210,22,210]},
-  under:{r:900,  th:0.9,         ph:2.25, t:[0,-60,0]}
-};
-document.querySelectorAll('.vbtns button').forEach(function(b){
-  b.addEventListener('click', function(){
-    var v = VIEW[b.dataset.v];
-    aim.r=v.r; aim.th=v.th; aim.ph=v.ph; aim.t.set(v.t[0],v.t[1],v.t[2]);
-  });
-});
+['cProps','props','cBatt','battery','cPay','payload','cKit','kit'].forEach(function(v,i,arr){ if(i%2)return;
+  document.getElementById(v).addEventListener('change',function(e){show(arr[i+1],e.target.checked);}); });
+document.getElementById('cWires').addEventListener('change',function(e){wireG.visible=e.target.checked;});
+document.getElementById('cSpin').addEventListener('change',function(e){spin=e.target.checked;});
+document.getElementById('cPoints').addEventListener('change',function(e){spotLayer.style.display=e.target.checked?'block':'none';});
 
-/* ===========================================================
-   LOOP
-   =========================================================== */
-var tv = new THREE.Vector3();
+var VIEW={iso:{r:1360,th:.78,ph:1.14,t:[0,-10,0]},top:{r:1150,th:-Math.PI/2,ph:.12,t:[0,0,0]},side:{r:1200,th:0,ph:Math.PI/2,t:[0,-30,0]},
+  stack:{r:430,th:.62,ph:.95,t:[0,40,0]},arm:{r:400,th:.6,ph:1.05,t:[210,22,210]},under:{r:900,th:.9,ph:2.25,t:[0,-60,0]},
+  kit:{r:820,th:1.2,ph:1.0,t:[20,KY+20,KZ]},power:{r:520,th:2.3,ph:1.35,t:[-20,-40,20]}};
+document.querySelectorAll('.vbtns button').forEach(function(b){b.addEventListener('click',function(){var v=VIEW[b.dataset.v];
+  aim.r=v.r;aim.th=v.th;aim.ph=v.ph;aim.t.set(v.t[0],v.t[1],v.t[2]);
+  if(b.dataset.v==='power'){pick(BYID.pm08);} });});
+
+/* ============ LOOP ============ */
+var tv=new THREE.Vector3(), lastCap=-1;
+function ease(t){return t<.5?2*t*t:1-Math.pow(-2*t+2,2)/2;}
 function loop(){
   requestAnimationFrame(loop);
-
-  expNow += (expAim - expNow) * 0.065;          // slower separation
-  PARTS.forEach(function(p){
-    var d = p.userData;
-    p.position.copy(d.home).addScaledVector(d.dir, d.dist*expNow);
-  });
-  wires.visible = document.getElementById('cWires').checked && expNow < 0.2;
-
-  if(spin) aim.th += 0.0014;
-  camStep();
-
-  if(document.getElementById('cPoints').checked){
-    PARTS.forEach(function(p){
-      var el = spots[p.userData.id];
-      if(!el) return;
-      if(!p.visible){ el.style.display='none'; return; }
-      el.style.display='grid';
-      tv.set(p.userData.spotAt[0], p.userData.spotAt[1], p.userData.spotAt[2]);
-      p.localToWorld(tv);
-      var v = tv.clone().project(camera);
-      if(v.z > 1){ el.style.display='none'; return; }
-      el.style.left = ((v.x*.5+.5)*innerWidth)+'px';
-      el.style.top  = ((-v.y*.5+.5)*innerHeight)+'px';
-    });
+  if(mode==='build'){
+    if(playing){ playT+=1/60; var frac=buildAim-Math.floor(buildAim+1e-6);
+      buildAim=Math.min(NSTEP,buildAim+ (frac<.999 && frac>0.001 ? 0.011 : (playT<1.4?0:0.011)));
+      if(Math.abs(buildAim-Math.round(buildAim))<1e-6){ if(playT>=1.4){playT=0;} }
+      if(buildAim>=NSTEP){playing=false;playBtn.textContent='Play the build';playBtn.classList.remove('stop');} }
+    build+=(buildAim-build)*.08;
+    stepr.value=buildAim; stepv.textContent=Math.min(NSTEP,Math.ceil(buildAim-1e-6))+' / '+NSTEP;
+    var cs=Math.min(NSTEP-1,Math.max(0,Math.ceil(buildAim-1e-6)-1));
+    if(cs!==lastCap){lastCap=cs; document.getElementById('capStep').textContent='STEP '+(cs+1);
+      document.getElementById('capOf').textContent='of '+NSTEP; document.getElementById('capT').textContent=STEPS[cs].t; document.getElementById('capP').textContent=STEPS[cs].p;}
+    document.getElementById('capBar').style.width=(build/NSTEP*100)+'%';
+    PARTS.forEach(function(p){var d=p.userData; if(d.kit){return;} if(!d.step){p.position.copy(d.home);return;}
+      var t=Math.max(0,Math.min(1,build-(d.step-1))); var vis=build>d.step-1+.001;
+      p.visible=vis && !(d.grp==='props'&&!document.getElementById('cProps').checked) && !(d.grp==='battery'&&!document.getElementById('cBatt').checked) && !(d.grp==='payload'&&!document.getElementById('cPay').checked);
+      p.position.copy(d.home).addScaledVector(d.dir,d.dist*1.3*(1-ease(t)));});
+    wireG.visible=document.getElementById('cWires').checked; WIRES.forEach(function(w){var a=BYID[w.userData.a],b=BYID[w.userData.b];
+      var st=Math.max(a?a.userData.step:0,b?b.userData.step:0); w.visible=build>=st-.02;});
+  } else {
+    expNow+=(expAim-expNow)*.065;
+    PARTS.forEach(function(p){var d=p.userData; if(d.kit)return; p.position.copy(d.home).addScaledVector(d.dir,d.dist*expNow);});
+    wireG.visible=document.getElementById('cWires').checked&&expNow<.2; WIRES.forEach(function(w){w.visible=true;});
   }
-  renderer.render(scene, camera);
+  if(spin)aim.th+=.0014; camStep();
+  if(document.getElementById('cPoints').checked){ PARTS.forEach(function(p){var el=spots[p.userData.id]; if(!el)return;
+    if(!p.visible){el.style.display='none';return;} el.style.display='grid';
+    tv.set(p.userData.spotAt[0],p.userData.spotAt[1],p.userData.spotAt[2]); p.localToWorld(tv); var v=tv.clone().project(camera);
+    if(v.z>1){el.style.display='none';return;} el.style.left=((v.x*.5+.5)*innerWidth)+'px'; el.style.top=((-v.y*.5+.5)*innerHeight)+'px'; }); }
+  renderer.render(scene,camera);
 }
-addEventListener('resize', function(){
-  camera.aspect = innerWidth/innerHeight;
-  camera.updateProjectionMatrix();
-  renderer.setSize(innerWidth, innerHeight);
-});
-loop();
-setTimeout(function(){ document.getElementById('boot').classList.add('off'); }, 450);
-
+addEventListener('resize',function(){camera.aspect=innerWidth/innerHeight;camera.updateProjectionMatrix();renderer.setSize(innerWidth,innerHeight);});
+loop(); setTimeout(function(){document.getElementById('boot').classList.add('off');},450);
 })();
 </script>
 </body>
