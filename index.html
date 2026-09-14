@@ -195,6 +195,7 @@
       <div><i style="background:#5f6396"></i>USB / sensor data</div>
       <div><i style="background:#2f8ba8"></i>RC / telemetry serial</div>
       <div><i style="background:#c9a227"></i>Motor phase</div>
+      <div><i style="background:#6b6e62"></i>Sheathed harness</div>
     </div>
   </div>
 </div>
@@ -527,37 +528,77 @@ var vhb=cy(12,12,1.5,MAT.red,20);vhb.position.set(28,1,-8);kSp.add(vhb);
 for(var sc=0;sc<6;sc++){var scw=cy(1.3,1.3,6,MAT.silver,8);scw.rotation.z=Math.PI/2;scw.position.set(16+sc*5,1,12);kSp.add(scw);}
 var tp=bx(40,2,26,MAT.white);tp.position.set(44,1,14);kSp.add(tp);
 
-/* ============ WIRING with connection metadata ============ */
+/* ============ WIRING · multi-strand bundles with pigtails, ties and plugs ============ */
 var WCOL={power:0xa8492f, gnd:0x24272c, can:0x1f6b52, pwm:0xb07d2a, usb:0x5f6396, ser:0x2f8ba8, phase:0xc9a227};
-function wire(pts,type,a,b,rad){
-  var cv=new THREE.CatmullRomCurve3(pts.map(function(p){return new THREE.Vector3(p[0],p[1],p[2]);}));
-  var mesh=new THREE.Mesh(new THREE.TubeGeometry(cv,44,rad||2.2,8,false),new THREE.MeshStandardMaterial({color:WCOL[type],metalness:.2,roughness:.55}));
-  mesh.userData={type:type,a:a,b:b,base:WCOL[type]}; wireG.add(mesh); WIRES.push(mesh); return mesh;
+var C={sheath:0x6b6e62, red:0xb8352b, blk:0x1e2124, yel:0xd9b13a, blu:0x3a7bd5, org:0xe08a2e, wht:0xe6e6e2, grn:0x3aa66b, gry:0x4b4e52};
+var STRAND={
+  power:{n:2,r:2.4,spread:3.6,sheath:false,cols:[C.red,C.blk]},
+  gnd:{n:2,r:2.4,spread:3.6,sheath:false,cols:[C.red,C.blk]},
+  can:{n:4,r:.75,spread:2.4,sheath:true,cols:[C.red,C.yel,C.blu,C.blk]},
+  pwm:{n:3,r:.7,spread:2.2,sheath:true,cols:[C.yel,C.red,C.blk]},
+  ser:{n:4,r:.7,spread:2.4,sheath:true,cols:[C.red,C.blk,C.grn,C.yel]},
+  usb:{n:3,r:1.1,spread:0,sheath:true,tail:0,cols:[C.sheath,C.sheath,C.sheath]},
+  phase:{n:3,r:1.0,spread:3.4,sheath:false,cols:[C.gry,C.gry,C.gry]},
+  coax:{n:1,r:1.2,spread:0,sheath:false,cols:[C.blk]}
+};
+var MCACHE={};
+function mcol(c){ if(!MCACHE[c]) MCACHE[c]=new THREE.MeshStandardMaterial({color:c,metalness:.18,roughness:.6}); return MCACHE[c]; }
+function sub(curve,t0,t1,seg){ var p=[]; for(var i=0;i<=seg;i++){p.push(curve.getPoint(t0+(t1-t0)*i/seg));} return new THREE.CatmullRomCurve3(p); }
+
+/* one bundle = many strands. Sheathed strands run muted grey, then fan out into coloured pigtails for the last stretch. */
+function bundle(pts,type,a,b,o){
+  o=o||{}; var S=STRAND[type], n=o.n||S.n, r=o.r||S.r, sheath=o.sheath!==undefined?o.sheath:S.sheath;
+  var tail=sheath?(o.tail!==undefined?o.tail:(S.tail!==undefined?S.tail:0.22)):0, spread=o.spread!==undefined?o.spread:S.spread, cols=o.cols||S.cols;
+  var curve=new THREE.CatmullRomCurve3(pts.map(function(p){return new THREE.Vector3(p[0],p[1],p[2]);}));
+  var SEG=60, fr=curve.computeFrenetFrames(SEG,false), pack=(n===1)?0:r*1.2;
+  var g=new THREE.Group(); g.userData={type:type,a:a,b:b,base:WCOL[type]||C.blk};
+  for(var k=0;k<n;k++){
+    var ang=k/n*Math.PI*2+0.6, pk=[];
+    for(var i=0;i<=SEG;i++){ var t=i/SEG, p=curve.getPoint(t), N=fr.normals[i], B=fr.binormals[i];
+      var tt=tail>0?Math.max(0,(t-(1-tail))/tail):0, off=pack+(spread-pack)*tt*tt;
+      pk.push(p.clone().addScaledVector(N,Math.cos(ang)*off).addScaledVector(B,Math.sin(ang)*off)); }
+    var ck=new THREE.CatmullRomCurve3(pk);
+    if(sheath&&tail>0){
+      g.add(new THREE.Mesh(new THREE.TubeGeometry(sub(ck,0,1-tail,40),40,r,7,false),mcol(C.sheath)));
+      g.add(new THREE.Mesh(new THREE.TubeGeometry(sub(ck,1-tail,1,16),16,r*.85,7,false),mcol(cols[k%cols.length])));
+    } else {
+      g.add(new THREE.Mesh(new THREE.TubeGeometry(ck,SEG,r,7,false),mcol(sheath?C.sheath:cols[k%cols.length])));
+    }
+  }
+  /* cable ties along sheathed runs */
+  if(sheath && curve.getLength()>70){
+    [0.3,0.62].forEach(function(t){ var tie=new THREE.Mesh(new THREE.TorusGeometry(pack+r+.5,.6,8,18),mcol(C.blk));
+      tie.position.copy(curve.getPoint(t)); tie.quaternion.setFromUnitVectors(new THREE.Vector3(0,0,1),curve.getTangent(t)); g.add(tie); });
+  }
+  /* plug at the board end */
+  if(o.plug){ var pl=bx(o.plug==='usb'?9:4.6, o.plug==='usb'?4:4.2, o.plug==='usb'?7:6.4, o.plug==='usb'?mcol(C.blk):MAT.white);
+    var e=curve.getPoint(1), tg=curve.getTangent(1); pl.position.copy(e).addScaledVector(tg,-2); pl.lookAt(e.clone().add(tg)); g.add(pl); }
+  wireG.add(g); WIRES.push(g); return g;
 }
-/* battery → PM08 → PDB */
-wire([[84,-98,0],[40,-78,26],[-64,-40,44]],'power','battery','pm08',3.0);
-wire([[84,-98,8],[40,-84,34],[-64,-46,48]],'gnd','battery','pm08',3.0);
-wire([[-64,-4,42],[-40,2,26],[-8,6,12]],'power','pm08','pdb',2.8);
-wire([[-64,-10,38],[-40,-3,20],[-8,4,4]],'gnd','pm08','pdb',2.8);
-wire([[-64,-14,48],[-46,10,36],[-58,38,-2]],'can','pm08','carrier',1.5);
-/* PDB → XT30 → ESC → motor, and ESC signal to FC */
+
+/* battery → PM08 → PDB (thick silicone, red/black) */
+bundle([[84,-98,0],[44,-82,28],[-40,-48,44],[-64,-32,44]],'power','battery','pm08',{r:2.6,spread:4});
+bundle([[-64,-14,40],[-44,-2,26],[-14,6,8]],'power','pm08','pdb',{r:2.4,spread:3.6});
+bundle([[-58,-12,50],[-58,10,44],[-66,36,-6]],'can','pm08','carrier',{plug:true});
+
+/* PDB → XT30 → ESC → motor · ESC signal back to the flight controller */
 ANG.forEach(function(deg,i){
   var a=deg*Math.PI/180,ux=Math.cos(a),uz=Math.sin(a);
-  wire([[ux*22,10,uz*22],[ux*44,11,uz*44],[ux*60,10,uz*60]],'power','pdb','xt30-'+i,1.9);
-  wire([[ux*18,10,uz*18],[ux*40,9,uz*40],[ux*56,9,uz*56]],'gnd','pdb','xt30-'+i,1.9);
-  wire([[ux*64,10,uz*64],[ux*120,15,uz*120],[ux*(ARM_R-86),16.5,uz*(ARM_R-86)]],'power','xt30-'+i,'esc-'+i,1.6);
-  wire([[ux*(ARM_R-62+26),16.5,uz*(ARM_R-62+26)],[ux*(ARM_R-30),18,uz*(ARM_R-30)],[ux*(ARM_R-24),28,uz*(ARM_R-24)]],'phase','esc-'+i,'motor-'+i,1.3);
-  wire([[ux*(ARM_R-62),18,uz*(ARM_R-62)],[ux*80,21,uz*80],[-58,37,-8+i*4]],'pwm','esc-'+i,'carrier',1.15);
+  bundle([[ux*22,10,uz*22],[ux*42,11,uz*42],[ux*58,10,uz*58]],'power','pdb','xt30-'+i,{r:1.4,spread:2.4});
+  bundle([[ux*66,10,uz*66],[ux*120,15,uz*120],[ux*(ARM_R-88),16.5,uz*(ARM_R-88)]],'power','xt30-'+i,'esc-'+i,{r:1.3,spread:2.2});
+  bundle([[ux*(ARM_R-36),16.5,uz*(ARM_R-36)],[ux*(ARM_R-27),21,uz*(ARM_R-27)],[ux*(ARM_R-23),28,uz*(ARM_R-23)]],'phase','esc-'+i,'motor-'+i,{});
+  bundle([[ux*(ARM_R-62),18,uz*(ARM_R-62)],[ux*74,13,uz*74],[ux*36,16,uz*36],[-28,22,-34],[-58,38,-44+i*1.4]],'pwm','esc-'+i,'carrier',{plug:(i===0)});
 });
-/* CAN, serial, USB */
-wire([[62,70,-66],[44,50,-46],[-52,40,-28]],'can','gps','carrier',1.5);
-wire([[-50,38,-48],[-56,37,-34],[-60,38,-20]],'ser','telemetry','carrier',1.4);
-wire([[-54,38,44],[-58,37,30],[-60,38,16]],'ser','receiver','carrier',1.3);
-wire([[20,37,-56],[-20,38,-50],[-58,38,-38]],'ser','buzzer','carrier',1.1);
-wire([[84,-48,0],[80,-6,22],[46,44,26],[34,50,10]],'usb','realsense','jetson',1.8);
-wire([[-36,-68,0],[-40,-30,-8],[-58,36,-16]],'usb','flow','carrier',1.3);
-wire([[6,84,-30],[-20,60,-40],[-46,50,-46]],'ser','antennas','telemetry',1.2);
-wire([[-22,84,-20],[-36,62,-44],[-48,50,-50]],'ser','antennas','telemetry',1.2);
+
+/* CAN bus, serial links, USB and coax */
+bundle([[62,72,-66],[52,52,-52],[-16,44,-36],[-66,38,-18]],'can','gps','carrier',{plug:true});
+bundle([[-50,38,-48],[-60,37,-40],[-66,38,-30]],'ser','telemetry','carrier',{plug:true,tail:.4});
+bundle([[-54,38,44],[-62,37,26],[-66,38,6]],'ser','receiver','carrier',{plug:true,tail:.4});
+bundle([[20,37,-56],[-12,41,-42],[-50,40,-24],[-66,38,18]],'ser','buzzer','carrier',{plug:true});
+bundle([[-36,-68,0],[-44,-32,10],[-56,18,26],[-66,38,30]],'usb','flow','carrier',{r:.75,n:4,sheath:true,tail:.2,cols:[C.red,C.blk,C.blu,C.grn],plug:true});
+bundle([[84,-48,0],[82,-8,22],[52,42,30],[8,44,-40],[-6,44,-52]],'usb','realsense','jetson',{plug:'usb'});
+bundle([[6,84,-30],[-8,62,-38],[-44,52,-46]],'coax','antennas','telemetry',{});
+bundle([[-22,84,-20],[-32,64,-40],[-50,52,-50]],'coax','antennas','telemetry',{});
 
 /* ============ BUILD SEQUENCE ============ */
 var STEPS=[
@@ -605,10 +646,12 @@ var hiMat=new THREE.MeshStandardMaterial({color:0x1f6b52,emissive:0x0d3a2b,emiss
 function paint(gp,on){gp.traverse(function(o){if(!o.isMesh)return; if(on){if(!o.userData._m)o.userData._m=o.material;o.material=hiMat;}else if(o.userData._m){o.material=o.userData._m;}});}
 function traceWires(id){
   WIRES.forEach(function(w){ var hit=id&&(w.userData.a===id||w.userData.b===id);
-    w.material.emissive.setHex(hit?w.userData.base:0x000000); w.material.emissiveIntensity=hit?.55:0;
-    w.material.transparent=!!id&&!hit; w.material.opacity=(id&&!hit)?.18:1; });
+    w.children.forEach(function(m){ if(!m.isMesh)return; if(!m.userData._m){m.userData._m=m.material;}
+      if(hit){ var hm=m.userData._m.clone(); hm.emissive=new THREE.Color(w.userData.base); hm.emissiveIntensity=.45; m.material=hm; }
+      else if(id){ var dm=m.userData._m.clone(); dm.transparent=true; dm.opacity=.16; m.material=dm; }
+      else { m.material=m.userData._m; } }); });
 }
-var TYPENAME={power:'Battery power',gnd:'Ground return',can:'CAN bus',pwm:'ESC signal',usb:'USB / data',ser:'Serial',phase:'Motor phase'};
+var TYPENAME={power:'Battery power',gnd:'Ground return',can:'CAN bus',pwm:'ESC signal',usb:'USB / data',ser:'Serial',phase:'Motor phase',coax:'Antenna coax'};
 function pick(p){
   if(sel){paint(sel,false);if(spots[sel.userData.id])spots[sel.userData.id].classList.remove('on');}
   sel=p; paint(p,true); if(spots[p.userData.id])spots[p.userData.id].classList.add('on'); traceWires(p.userData.id);
