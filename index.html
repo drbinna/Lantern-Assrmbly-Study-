@@ -185,6 +185,7 @@
       <button data-v="side">Side</button><button data-v="stack">Centre stack</button>
       <button data-v="arm">Arm detail</button><button data-v="under">Underside</button>
       <button data-v="kit">Ground kit</button><button data-v="power">Power path</button>
+      <button data-v="iso">Recentre</button><button data-v="fit">Fit all</button>
     </div>
   </div>
   <div class="block">
@@ -219,7 +220,7 @@
 </div>
 
 <footer>
-  <div class="mono">DRAG TO ORBIT · SCROLL TO ZOOM · RIGHT-DRAG TO PAN · CLICK A PART TO TRACE ITS CABLES</div>
+  <div class="mono">DRAG TO ORBIT · SCROLL TO ZOOM · RIGHT-DRAG TO PAN · DOUBLE-CLICK TO RECENTRE · CLICK A PART TO TRACE ITS CABLES</div>
   <div class="mono">v0.3 · HOLYBRO X650 · THREE.JS</div>
 </footer>
 <div id="boot" class="mono">BUILDING ASSEMBLY…</div>
@@ -477,14 +478,16 @@ var pFlow=part({id:'flow',name:'Optical flow sensor',pn:'ATK-PMW3901',cat:'SENSI
 pFlow.add(bx(26,4,20,MAT.pcbK)); var fl=cy(4.5,4.5,5,MAT.glass,16);fl.position.y=-4;pFlow.add(fl);
 
 /* ============ GROUND KIT · bench beside the aircraft ============ */
-var KZ=-640, KY=-232;
+var KY=-232, KZL=-430, KZR=430;
 (function(){
-  var t=new THREE.Mesh(new THREE.BoxGeometry(760,10,330),M(0xd9d6cc,.05,.9)); t.position.set(0,KY-5,KZ); root.add(t); t.userData.kitTable=true;
-  shadow(900,500,0,KZ,KY-6);
+  [KZL,KZR].forEach(function(z){
+    var t=new THREE.Mesh(new THREE.BoxGeometry(480,10,240),M(0xd9d6cc,.05,.9)); t.position.set(0,KY-5,z); root.add(t); t.userData.kitTable=true;
+    shadow(620,380,0,z,KY-6);
+  });
 })();
 function kit(o){ o.kit=true; o.grp='kit'; o.dir=o.dir||[0,1,0]; o.dist=o.dist||0; o.step=o.step||0; return part(o); }
 
-var kTx=kit({id:'tx16s',name:'Transmitter',pn:'RadioMaster TX16S',cat:'GROUND KIT',pos:[-270,KY+32,KZ-60],spot:true,spotAt:[0,40,0],
+var kTx=kit({id:'tx16s',name:'Transmitter',pn:'RadioMaster TX16S',cat:'GROUND KIT',pos:[-110,KY+32,KZL-20],spot:true,spotAt:[0,40,0],
   desc:'The handheld radio you fly with. Runs EdgeTX. Its stick positions go over the air to the receiver on the aircraft. Set a flight-mode switch and a kill switch here before the first hover, and never fly with it below half charge — the 18650 cells in the Efest charger are for this.',
   facts:[['FIRMWARE','EdgeTX'],['LINK','To RC receiver'],['CELLS','2 × 18650'],['SET','Kill switch']]});
 kTx.add(bx(180,52,210,MAT.carbon));
@@ -494,7 +497,7 @@ var scr=bx(120,2,80,MAT.screenOn);scr.position.set(0,27,60);kTx.add(scr);
 var ant=cy(3,3,150,MAT.plastic,10);ant.rotation.z=.4;ant.position.set(-60,92,-100);kTx.add(ant);
 for(var sw=0;sw<6;sw++){var s2=cy(1.8,1.8,14,MAT.silver,8);s2.position.set(-70+sw*28,33,-96);kTx.add(s2);}
 
-var kHota=kit({id:'hota',name:'Flight battery charger',pn:'HOTA S6 · dual smart charger',cat:'GROUND KIT',pos:[-30,KY+22,KZ+40],spot:true,spotAt:[0,30,0],
+var kHota=kit({id:'hota',name:'Flight battery charger',pn:'HOTA S6 · dual smart charger',cat:'GROUND KIT',pos:[120,KY+22,KZL+10],spot:true,spotAt:[0,30,0],
   desc:'400 W AC / 650 W DC balance charger for the flight pack — two packs at a time. Always charge in balance mode with both the XT90 lead and the balance plug connected, at 1C or below, inside a fireproof bag, with someone in the room.',
   facts:[['MODE','Balance charge'],['RATE','≤ 1C'],['LEADS','Main + balance'],['NEVER','Unattended']]});
 kHota.add(bx(110,44,120,M(0x3b3f46,.5,.4)));
@@ -502,26 +505,26 @@ var hs=bx(64,2,50,MAT.screenOn);hs.position.set(0,23,-20);kHota.add(hs);
 var hk=cy(6,6,6,MAT.red,16);hk.position.set(36,25,38);kHota.add(hk);
 var hb=cy(5,5,4,MAT.plastic,16);hb.position.set(-36,24,38);kHota.add(hb);
 
-var kEf=kit({id:'efest',name:'Cell charger + 18650s',pn:'Efest LUC V6',cat:'GROUND KIT',pos:[150,KY+14,KZ+50],spot:true,spotAt:[0,22,0],
+var kEf=kit({id:'efest',name:'Cell charger + 18650s',pn:'Efest LUC V6',cat:'GROUND KIT',pos:[-120,KY+14,KZR+10],spot:true,spotAt:[0,22,0],
   desc:'A six-bay charger and four 3000 mAh lithium-ion cells. These power the transmitter, not the aircraft — different chemistry, different charger. Keep them stored apart from the flight pack so nobody grabs the wrong charger under time pressure.',
   facts:[['FOR','Transmitter'],['CELLS','4 × 18650'],['NOT FOR','Flight pack']]});
 kEf.add(bx(150,28,100,M(0x1c1f23,.4,.5)));
 var es=bx(120,2,20,MAT.screen);es.position.set(0,15,-34);kEf.add(es);
 for(var ce=0;ce<4;ce++){var cell=cy(9,9,65,MAT.lipoB,18);cell.rotation.x=Math.PI/2;cell.position.set(-52+ce*23,16,10);kEf.add(cell);}
 
-var kUart=kit({id:'uart',name:'USB-to-UART adapter',pn:'FTDI · V1.3',cat:'GROUND KIT',pos:[290,KY+6,KZ-70],spot:true,spotAt:[0,12,0],
+var kUart=kit({id:'uart',name:'USB-to-UART adapter',pn:'FTDI · V1.3',cat:'GROUND KIT',pos:[40,KY+6,KZR-60],spot:true,spotAt:[0,12,0],
   desc:'Lets a laptop talk to one of the flight controller\'s serial ports over USB-C. Useful for reading console output and for peripherals that do not have their own USB. Not needed for QGroundControl over the main USB port.',
   facts:[['CHIP','FTDI'],['HOST','USB-C'],['TARGET','FC UART']]});
 kUart.add(bx(36,4,22,MAT.pcbK)); var uc=bx(9,4,7,MAT.silver);uc.position.set(-20,1,0);kUart.add(uc);
 [[10,-7],[10,7]].forEach(function(p){var j=bx(5,4,4,MAT.white);j.position.set(p[0],3,p[1]);kUart.add(j);});
 
-var kCam=kit({id:'hbv',name:'CSI camera + ribbon',pn:'HBV FPC camera · JT-PX ribbon',cat:'GROUND KIT',pos:[300,KY+4,KZ+30],spot:true,spotAt:[0,14,0],
+var kCam=kit({id:'hbv',name:'CSI camera + ribbon',pn:'HBV FPC camera · JT-PX ribbon',cat:'GROUND KIT',pos:[130,KY+4,KZR+40],spot:true,spotAt:[0,14,0],
   desc:'A small colour camera on an orange flexible ribbon, meant for a Pi-style CSI port. Not fitted to the aircraft yet — it is an option for a lightweight colour feed alongside the RealSense depth stream. Ribbons tear easily; keep it in its bag until it has a mount.',
   facts:[['INTERFACE','CSI ribbon'],['STATUS','Spare'],['HANDLE','Carefully']]});
 kCam.add(bx(24,3,24,MAT.pcbK)); var lens=cy(5,5,4,MAT.glass,16);lens.position.y=3;kCam.add(lens);
 var rib=bx(120,.8,14,MAT.fpc);rib.position.set(-72,0,0);kCam.add(rib);
 
-var kSp=kit({id:'spares',name:'Connector spares + hardware',pn:'XT60 pairs · M2.5 screws · VHB · 3M tape',cat:'GROUND KIT',pos:[250,KY+4,KZ+110],spot:true,spotAt:[0,14,0],
+var kSp=kit({id:'spares',name:'Connector spares + hardware',pn:'XT60 pairs · M2.5 screws · VHB · 3M tape',cat:'GROUND KIT',pos:[30,KY+4,KZR+50],spot:true,spotAt:[0,14,0],
   desc:'Spare XT60 pairs for making up leads, M2.5 × 6 countersunk screws and collet adapters for the props, a red VHB pad for the GPS mast, and 3M 9448A double-sided tape for mounting light boards. Double-sided tape is for holding things in position, never for holding things together — and never under a flight controller.',
   facts:[['XT60','Spare pairs'],['SCREWS','M2.5 × 6'],['TAPE','3M 9448A'],['PAD','3M VHB']]});
 [[-30,0],[-14,4],[2,-2]].forEach(function(p){var x=bx(10,9,8,MAT.yellow);x.position.set(p[0],4,p[1]);kSp.add(x);});
@@ -636,7 +639,7 @@ cv2.addEventListener('pointerdown',function(e){drag=true;pan=(e.button===2);lx=d
 cv2.addEventListener('pointerup',function(e){drag=false;pan=false;try{cv2.releasePointerCapture(e.pointerId);}catch(err){}});
 cv2.addEventListener('pointermove',function(e){ if(!drag)return; var ddx=e.clientX-lx,ddy=e.clientY-ly; lx=e.clientX;ly=e.clientY;
   if(pan){var rt=new THREE.Vector3().setFromMatrixColumn(camera.matrix,0),up=new THREE.Vector3().setFromMatrixColumn(camera.matrix,1);
-    aim.t.addScaledVector(rt,-ddx*cur.r*.0009); aim.t.addScaledVector(up,ddy*cur.r*.0009);}
+    aim.t.addScaledVector(rt,-ddx*cur.r*.0009); aim.t.addScaledVector(up,ddy*cur.r*.0009); PANBOX.clampPoint(aim.t,aim.t);}
   else{aim.th-=ddx*.0034; aim.ph-=ddy*.0034; aim.ph=Math.max(.08,Math.min(Math.PI-.08,aim.ph));} });
 cv2.addEventListener('wheel',function(e){e.preventDefault();var st=Math.max(-1,Math.min(1,e.deltaY/100))*.055;aim.r=Math.max(330,Math.min(3400,aim.r*(1+st))); syncZoom();},{passive:false});
 cv2.addEventListener('contextmenu',function(e){e.preventDefault();});
@@ -713,6 +716,9 @@ document.getElementById('prevS').addEventListener('click',function(){buildAim=Ma
 
 ['cProps','props','cBatt','battery','cPay','payload','cKit','kit'].forEach(function(v,i,arr){ if(i%2)return;
   document.getElementById(v).addEventListener('change',function(e){show(arr[i+1],e.target.checked);}); });
+document.getElementById('cKit').addEventListener('change',function(e){
+  root.children.forEach(function(o){ if(o.userData.kitTable) o.visible=e.target.checked; });
+  if(e.target.checked){ frameAll(); } else { aim.t.set(0,-10,0); aim.r=1360; syncZoom(); } });
 document.getElementById('cWires').addEventListener('change',function(e){wireG.visible=e.target.checked;});
 var ZMIN=330, ZMAX=3400, zoomEl=document.getElementById('zoom'), zoomV=document.getElementById('zoomv');
 function zoomToR(v){ return ZMIN*Math.pow(ZMAX/ZMIN, v/100); }
@@ -724,12 +730,24 @@ syncZoom();
 document.getElementById('cSpin').addEventListener('change',function(e){spin=e.target.checked;});
 document.getElementById('cPoints').addEventListener('change',function(e){spotLayer.style.display=e.target.checked?'block':'none';});
 
+var PANBOX=new THREE.Box3(new THREE.Vector3(-420,-260,-560),new THREE.Vector3(420,220,560));
+function frameAll(){
+  var box=new THREE.Box3(), any=false;
+  PARTS.forEach(function(p){ if(!p.visible)return; box.expandByObject(p); any=true; });
+  root.children.forEach(function(o){ if(o.userData.kitTable && document.getElementById('cKit').checked){ box.expandByObject(o); any=true; } });
+  if(!any)return;
+  var c=new THREE.Vector3(), sz=new THREE.Vector3(); box.getCenter(c); box.getSize(sz);
+  var rad=sz.length()/2, fov=camera.fov*Math.PI/180, asp=Math.max(1,1/camera.aspect);
+  aim.t.copy(c); aim.r=Math.max(330,Math.min(3400, rad/Math.sin(fov/2)*asp*1.06)); syncZoom();
+}
 var VIEW={iso:{r:1360,th:.78,ph:1.14,t:[0,-10,0]},top:{r:1150,th:-Math.PI/2,ph:.12,t:[0,0,0]},side:{r:1200,th:0,ph:Math.PI/2,t:[0,-30,0]},
   stack:{r:430,th:.62,ph:.95,t:[0,40,0]},arm:{r:400,th:.6,ph:1.05,t:[210,22,210]},under:{r:900,th:.9,ph:2.25,t:[0,-60,0]},
-  kit:{r:820,th:1.2,ph:1.0,t:[20,KY+20,KZ]},power:{r:520,th:2.3,ph:1.35,t:[-20,-40,20]}};
+  kit:{r:760,th:-1.2,ph:1.05,t:[0,KY+20,KZL]},power:{r:520,th:2.3,ph:1.35,t:[-20,-40,20]}};
 document.querySelectorAll('.vbtns button').forEach(function(b){b.addEventListener('click',function(){var v=VIEW[b.dataset.v];
+  if(b.dataset.v==='fit'){ frameAll(); return; }
   aim.r=v.r;aim.th=v.th;aim.ph=v.ph;aim.t.set(v.t[0],v.t[1],v.t[2]); syncZoom();
   if(b.dataset.v==='power'){pick(BYID.pm08);} });});
+cv2.addEventListener('dblclick',function(){ aim.t.set(0,-10,0); aim.r=1360; syncZoom(); });
 
 /* ============ LOOP ============ */
 var tv=new THREE.Vector3(), lastCap=-1;
