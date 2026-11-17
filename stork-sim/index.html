@@ -1,0 +1,237 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Stork VTOL · Field Survey Simulator</title>
+<meta name="description" content="Fly the Stork VTOL over real Oklahoma farm fields. Plan a survey, fly it, and map every acre with the Walksnail camera.">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Archivo:wdth,wght@62..125,400;62..125,500;62..125,600;62..125,700&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+<link href="https://unpkg.com/maplibre-gl@4.7.1/dist/maplibre-gl.css" rel="stylesheet">
+<style>
+:root{--paper:#f1f0eb;--paper-2:#e8e7e0;--card:#fff;--ink:#1b1e1c;--ink-2:#5b615d;--ink-3:#989e99;--line:#dbdad2;
+  --green:#1f6b52;--green-2:#15503d;--mint:#8fb8a5;--amber:#b07d2a;--rust:#a8492f;--night:#121614;--glass:rgba(16,20,18,.72)}
+*{box-sizing:border-box}
+html,body{margin:0;height:100%;overflow:hidden;background:var(--paper);color:var(--ink);font-family:"Archivo",system-ui,sans-serif;-webkit-font-smoothing:antialiased}
+.mono{font-family:"JetBrains Mono",ui-monospace,monospace}
+button{font-family:inherit;cursor:pointer}
+.screen{position:fixed;inset:0;display:none}
+.screen.on{display:block}
+header.top{position:absolute;top:0;left:0;right:0;z-index:20;padding:16px 28px;display:flex;justify-content:space-between;align-items:center;border-bottom:1px solid var(--line);background:rgba(241,240,235,.92);backdrop-filter:blur(10px)}
+.logo{font-size:19px;font-weight:700;letter-spacing:-.02em}.logo span{color:var(--ink-3);font-weight:400}
+.eyebrow{margin-left:22px;font-size:10.5px;letter-spacing:.22em;color:var(--ink-3)}
+header.top .right{display:flex;gap:18px;align-items:center;font-size:11px;letter-spacing:.14em;color:var(--ink-3)}
+header.top a{color:var(--ink-3);text-decoration:none}header.top a:hover{color:var(--green)}
+.btn{border:0;border-radius:8px;background:var(--green);color:#fff;padding:12px 20px;font-size:14px;font-weight:500;transition:.15s}
+.btn:hover{background:var(--green-2)}.btn.ghost{background:none;border:1px solid var(--line);color:var(--ink-2)}.btn.ghost:hover{border-color:var(--ink-3);color:var(--ink)}
+.btn.dark{background:var(--ink)}.btn:disabled{opacity:.45;cursor:default}
+
+/* ---------- menu ---------- */
+#menu{overflow-y:auto}
+#menu .wrap{max-width:1180px;margin:0 auto;padding:110px 28px 60px}
+.kicker{font-size:11px;letter-spacing:.2em;color:var(--green);margin-bottom:14px}
+#menu h1{margin:0 0 14px;font-size:clamp(38px,5vw,64px);line-height:1;letter-spacing:-.035em;font-weight:500}#menu h1 b{font-weight:700}
+#menu .lede{font-size:15.5px;line-height:1.65;color:var(--ink-2);max-width:62ch;margin:0}
+.grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(270px,1fr));gap:18px;margin-top:34px}
+.lvl{background:var(--card);border:1px solid var(--line);border-radius:14px;overflow:hidden;cursor:pointer;transition:.18s;display:flex;flex-direction:column}
+.lvl:hover{transform:translateY(-2px);box-shadow:0 12px 30px rgba(0,0,0,.08);border-color:#cfcdc4}
+.lvl .img{height:150px;background:#cfd6c8 center/cover;position:relative}
+.lvl .img .tag{position:absolute;left:12px;top:12px;background:rgba(255,255,255,.92);border-radius:5px;padding:3px 8px;font-size:10px;letter-spacing:.14em;color:var(--ink-2)}
+.lvl .body{padding:16px 18px 18px;flex:1;display:flex;flex-direction:column}
+.lvl h3{margin:0 0 4px;font-size:19px;font-weight:600;letter-spacing:-.015em}
+.lvl p{margin:0 0 12px;font-size:13px;color:var(--ink-2);line-height:1.5}
+.lvl .meta{margin-top:auto;display:flex;justify-content:space-between;align-items:center;font-size:11px;color:var(--ink-3);letter-spacing:.06em}
+.stars{color:#d7d3c6;font-size:15px;letter-spacing:2px}.stars b{color:var(--amber);font-weight:400}
+.lvl.free .img{background:linear-gradient(135deg,#1f6b52,#0f3d2f);display:grid;place-items:center;color:#fff;font-size:13px;letter-spacing:.2em}
+.how{display:grid;grid-template-columns:repeat(auto-fill,minmax(250px,1fr));gap:22px;margin-top:44px;padding-top:28px;border-top:1px solid var(--line)}
+.how div b{display:block;font-size:14px;margin-bottom:6px}.how div{font-size:13px;color:var(--ink-2);line-height:1.6}
+.foot{margin-top:40px;font-size:11px;color:var(--ink-3);line-height:1.7}
+
+/* ---------- plan ---------- */
+#plan{display:none;grid-template-columns:1fr 380px}
+#plan.on{display:grid}
+#planMapWrap{position:relative;background:#2a2f2b;overflow:hidden;margin-top:58px}
+#planCanvas{position:absolute;inset:0;width:100%;height:100%;cursor:grab}
+#planSide{margin-top:58px;border-left:1px solid var(--line);background:var(--paper);overflow-y:auto;padding:22px 24px 26px}
+#planSide h2{margin:2px 0 4px;font-size:26px;letter-spacing:-.02em;font-weight:600}
+#planSide .sub{font-size:13px;color:var(--ink-2);margin:0 0 14px;line-height:1.55}
+.sect{font-size:10px;letter-spacing:.2em;color:var(--ink-3);margin:18px 0 10px}
+.ctl{margin-bottom:14px}.ctl .lbl{display:flex;justify-content:space-between;font-size:12.5px;color:var(--ink-2);margin-bottom:6px}.ctl .lbl b{color:var(--ink);font-weight:600}
+.ctl .hint{font-size:11px;color:var(--ink-3);margin-top:4px;line-height:1.45}
+input[type=range]{width:100%;accent-color:var(--green)}
+.facts{display:grid;grid-template-columns:1fr 1fr;gap:10px 14px;background:var(--card);border:1px solid var(--line);border-radius:11px;padding:14px}
+.facts span{display:block;font-size:9.5px;letter-spacing:.12em;color:var(--ink-3);margin-bottom:3px}.facts b{font-size:14px;font-weight:600}
+.facts .warn{color:var(--rust)}
+.chips{display:flex;gap:6px;flex-wrap:wrap}.chip{font-size:11.5px;padding:6px 10px;border-radius:6px;border:1px solid var(--line);background:var(--card);color:var(--ink-2)}
+.chip:hover{border-color:var(--ink-3);color:var(--ink)}
+.goals{font-size:12.5px;line-height:1.75;color:var(--ink-2);background:var(--card);border:1px solid var(--line);border-radius:11px;padding:12px 14px}
+.goals i{font-style:normal;color:var(--amber)}
+.planBtns{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-top:18px}
+.legendMap{position:absolute;left:16px;bottom:16px;background:rgba(255,255,255,.93);border-radius:10px;padding:10px 12px;font-size:11.5px;color:var(--ink-2);display:grid;gap:5px}
+.legendMap i{display:inline-block;width:18px;height:3px;border-radius:2px;margin-right:8px;vertical-align:middle}
+.mapTip{position:absolute;left:16px;top:16px;background:rgba(255,255,255,.93);border-radius:8px;padding:8px 11px;font-size:12px;color:var(--ink-2)}
+
+/* ---------- fly ---------- */
+#fly{background:#9fb6c9}
+body.flying header.top{display:none}
+#flyCanvas{position:absolute;inset:0}
+.hud{position:absolute;z-index:5;color:#fff;font-family:"JetBrains Mono",monospace}
+.panel{background:var(--glass);border:1px solid rgba(255,255,255,.08);border-radius:12px;backdrop-filter:blur(8px)}
+#hudTL{left:16px;top:16px;padding:12px 14px;min-width:230px}
+#hudTL .mode{font-family:"Archivo";font-size:20px;font-weight:700;letter-spacing:.02em}
+#hudTL .modeSub{font-size:10.5px;color:#a9b6ae;letter-spacing:.12em;margin-top:2px}
+.tiles{display:grid;grid-template-columns:repeat(3,auto);gap:10px 18px;margin-top:12px}
+.tiles div span{display:block;font-size:9px;color:#8e9b93;letter-spacing:.14em}.tiles div b{font-size:17px;font-weight:600}
+.bar{height:6px;border-radius:3px;background:rgba(255,255,255,.14);overflow:hidden;margin-top:4px}.bar i{display:block;height:100%;background:#8fe0b5;width:0}
+#hudTR{right:16px;top:16px;padding:12px 14px;width:250px}
+#hudTR .cov{font-family:"Archivo";font-size:34px;font-weight:700;line-height:1}
+#hudTR .covSub{font-size:10px;color:#a9b6ae;letter-spacing:.12em;margin:4px 0 8px}
+#hudTR .row{display:flex;justify-content:space-between;font-size:11.5px;color:#cfd8d2;margin-top:6px}
+#hudTR .row b{color:#fff;font-weight:500}
+#msgs{left:50%;top:16px;transform:translateX(-50%);text-align:center;pointer-events:none}
+#msgs div{display:inline-block;margin:0 auto 6px;padding:7px 14px;border-radius:8px;background:var(--glass);font-size:12.5px;transition:opacity .6s}
+#msgs .bad{background:rgba(168,73,47,.88)}
+#pip{right:16px;bottom:16px;width:320px;height:180px;border-radius:10px;overflow:hidden;border:1px solid rgba(255,255,255,.25);pointer-events:none}
+#pipLbl{right:24px;bottom:172px;font-size:10px;letter-spacing:.14em;color:#fff;text-shadow:0 1px 3px #000;pointer-events:none}
+#hudBL{left:16px;bottom:16px;padding:10px 13px;font-size:11px;color:#cfd8d2;line-height:1.75;max-width:420px}
+#hudBL kbd{display:inline-block;min-width:20px;text-align:center;padding:0 5px;border-radius:4px;background:rgba(255,255,255,.14);color:#fff;font-family:inherit;font-size:10.5px}
+#hudBL .x{float:right;cursor:pointer;color:#8e9b93;margin-left:10px}
+#ctrlBar{left:50%;bottom:16px;transform:translateX(-50%);display:flex;gap:6px;padding:6px}
+#ctrlBar button{border:0;border-radius:8px;background:rgba(255,255,255,.1);color:#fff;font-family:"JetBrains Mono";font-size:11.5px;padding:9px 12px;letter-spacing:.04em}
+#ctrlBar button:hover{background:rgba(255,255,255,.2)}#ctrlBar button.on{background:#1f6b52}
+#warn{left:50%;top:44%;transform:translate(-50%,-50%);font-family:"Archivo";font-size:15px;font-weight:600;padding:10px 18px;border-radius:9px;background:rgba(168,73,47,.9);display:none;letter-spacing:.04em}
+#wind{position:absolute;right:16px;top:208px;width:250px;padding:10px 14px;display:flex;align-items:center;gap:12px;font-size:11px;color:#cfd8d2}
+#wind svg{flex:none}
+#startOverlay{position:absolute;inset:0;z-index:8;display:grid;place-items:center;background:rgba(10,14,12,.35);pointer-events:auto}
+#startOverlay .panel{padding:22px 26px;max-width:440px;color:#fff;text-align:center}
+#startOverlay h3{margin:0 0 8px;font-family:"Archivo";font-size:22px}
+#startOverlay p{margin:0 0 16px;font-size:13px;line-height:1.6;color:#cfd8d2;font-family:"Archivo"}
+#startOverlay .btn{margin:0 4px}
+
+/* ---------- debrief ---------- */
+#debrief{z-index:30;background:rgba(15,19,17,.55);backdrop-filter:blur(4px)}
+#debrief .card{position:absolute;left:50%;top:50%;transform:translate(-50%,-50%);width:min(760px,calc(100% - 32px));background:var(--card);border-radius:18px;display:grid;grid-template-columns:300px 1fr;overflow:hidden;box-shadow:0 30px 80px rgba(0,0,0,.3)}
+#debrief canvas{width:300px;height:100%;min-height:360px;display:block;background:#2a2f2b}
+#debrief .r{padding:26px 28px}
+#debrief h2{margin:4px 0 6px;font-size:28px;letter-spacing:-.02em}
+#debrief .bigstars{font-size:34px;letter-spacing:6px;color:#e2dfd4;margin:6px 0 12px}#debrief .bigstars b{color:var(--amber);font-weight:400}
+#debrief .score{font-size:13px;color:var(--ink-2);margin-bottom:14px}
+#debrief table{width:100%;border-collapse:collapse;font-size:13px}
+#debrief td{padding:6px 0;border-bottom:1px solid var(--line)}#debrief td:last-child{text-align:right;font-weight:600}
+#debrief .reasons{font-size:12.5px;color:var(--ink-2);margin:12px 0 0;line-height:1.6}
+#debrief .btns{display:flex;gap:8px;margin-top:18px;flex-wrap:wrap}
+
+/* ---------- free play ---------- */
+#freeMap{position:absolute;inset:58px 0 0 0}
+#freePanel{position:absolute;right:18px;top:76px;width:330px;z-index:5;background:var(--card);border:1px solid var(--line);border-radius:14px;padding:18px 20px;box-shadow:0 12px 30px rgba(0,0,0,.12)}
+#freePanel h3{margin:0 0 6px;font-size:20px}
+#freePanel p{margin:0 0 12px;font-size:13px;color:var(--ink-2);line-height:1.55}
+#freePanel .sel{font-size:13px;background:var(--paper);border-radius:9px;padding:10px 12px;margin-bottom:12px;color:var(--ink-2)}
+#freePanel .sel b{color:var(--ink)}
+#freeJump{display:flex;gap:6px;flex-wrap:wrap;margin-bottom:12px}
+.loading{position:fixed;inset:0;z-index:50;display:none;place-items:center;background:rgba(241,240,235,.85);font-size:11px;letter-spacing:.2em;color:var(--ink-3)}
+.loading.on{display:grid}
+@media(max-width:900px){#plan.on{grid-template-columns:1fr}#planMapWrap{height:46vh}#planSide{margin-top:0}#pip{display:none}#hudBL{display:none}#debrief .card{grid-template-columns:1fr}#debrief canvas{width:100%;min-height:200px}}
+</style>
+</head>
+<body>
+<header class="top">
+  <div style="display:flex;align-items:center"><div class="logo">STORK <span>/ FIELD SIM</span></div><div class="eyebrow mono">VTOL SURVEY SIMULATOR · LANTERN</div></div>
+  <div class="right mono"><a href="#" id="navMenu">CAMPAIGN</a><a href="#" id="navFree">FREE PLAY</a><a href="https://stork-vtol-assembly.vercel.app/">ASSEMBLY →</a></div>
+</header>
+
+<section class="screen on" id="menu"><div class="wrap">
+  <div class="kicker mono">REAL FIELDS · REAL PHYSICS · WALKSNAIL CAMERA</div>
+  <h1>Map every acre.<br><b>Bring it home.</b></h1>
+  <p class="lede">Fly the Stork VTOL over real Oklahoma farmland. Plan the survey, take off like a quadcopter, transition to wing flight, and cover the field with the Walksnail camera before the battery runs low. The flight model is built from the Stork's measured wing, tail and motor layout.</p>
+  <div class="grid" id="levelGrid"></div>
+  <div class="how">
+    <div><b>1 · Plan</b>Pick your altitude, line direction, overlap and launch spot. Higher isn't always wider: the fisheye gets too blurry at the edges.</div>
+    <div><b>2 · Fly</b>Run the mission on autopilot, or fly it yourself for a 25% bonus. Wind pushes you off the lines; banked turns tilt the camera off the ground.</div>
+    <div><b>3 · Score</b>Stars for coverage at the detail target, battery reserve, beating par time and staying inside the rules: 400 ft ceiling and 1 km line of sight.</div>
+  </div>
+  <div class="foot mono">Fields: USDA NASS Crop Sequence Boundaries · Imagery: USDA NAIP via USGS · Elevation: USGS 3DEP · Free play imagery: Esri World Imagery.<br>Flight model is an estimate for learning and planning, not a certified simulator. Battery (6S 5000 mAh), weight (2.6 kg) and the 1 km line-of-sight ring are game assumptions.</div>
+</div></section>
+
+<section class="screen" id="plan">
+  <div id="planMapWrap"><canvas id="planCanvas"></canvas>
+    <div class="mapTip mono" id="planTip">DRAG THE <b>H</b> PAD TO MOVE YOUR LAUNCH SPOT</div>
+    <div class="legendMap"><div><i style="background:#ffb547"></i>Field boundary</div><div><i style="background:#fff"></i>Flight lines</div><div><i style="background:rgba(143,224,181,.8);height:8px"></i>Usable camera swath</div><div><i style="background:#ff6b5b"></i>1 km line-of-sight ring</div></div>
+  </div>
+  <aside id="planSide">
+    <div class="kicker mono" id="pKicker">LEVEL 1</div>
+    <h2 id="pTitle"></h2>
+    <p class="sub" id="pBrief"></p>
+    <div class="goals" id="pGoals"></div>
+    <p class="sect mono">SURVEY PLAN</p>
+    <div class="ctl"><div class="lbl"><span>Altitude above ground</span><b id="vAlt"></b></div><input type="range" id="sAlt" min="25" max="120" step="1" value="60">
+      <div class="hint" id="hAlt"></div></div>
+    <div class="ctl"><div class="lbl"><span>Line direction</span><b id="vHdg"></b></div><input type="range" id="sHdg" min="0" max="179" step="1" value="0">
+      <div class="chips" style="margin-top:7px"><button class="chip" id="bAlign">Align with field</button><button class="chip" id="bWindAlong">Along the wind</button><button class="chip" id="bWindAcross">Across the wind</button></div></div>
+    <div class="ctl"><div class="lbl"><span>Side overlap</span><b id="vOv"></b></div><input type="range" id="sOv" min="0" max="60" step="1" value="20">
+      <div class="hint">How much neighbouring passes overlap. More overlap covers gusts and turns, but adds lines.</div></div>
+    <div class="ctl"><div class="lbl"><span>Cruise airspeed</span><b id="vSpd"></b></div><input type="range" id="sSpd" min="14" max="22" step="0.5" value="17"></div>
+    <p class="sect mono">ESTIMATE</p>
+    <div class="facts" id="pFacts"></div>
+    <div class="planBtns"><button class="btn" id="bFlyAuto">Fly mission ▸</button><button class="btn dark" id="bFlyManual">Fly it myself</button></div>
+    <button class="btn ghost" style="width:100%;margin-top:8px" id="bBack">← Back</button>
+  </aside>
+</section>
+
+<section class="screen" id="fly">
+  <div id="flyCanvas"></div>
+  <div class="hud panel" id="hudTL"><div class="mode" id="hMode">DISARMED</div><div class="modeSub" id="hModeSub">PRESS SPACE TO ARM</div>
+    <div class="tiles">
+      <div><span>AIRSPEED</span><b id="hVa">0</b></div><div><span>GROUND</span><b id="hGs">0</b></div><div><span>ALT AGL</span><b id="hAgl">0</b></div>
+      <div><span>CLIMB</span><b id="hVs">0</b></div><div><span>POWER</span><b id="hPw">0</b></div><div><span>TIME</span><b id="hT">0:00</b></div>
+    </div>
+    <div style="margin-top:12px;font-size:9px;color:#8e9b93;letter-spacing:.14em;display:flex;justify-content:space-between"><span>BATTERY</span><span id="hBattTxt"></span></div><div class="bar"><i id="hBatt"></i></div>
+  </div>
+  <div class="hud panel" id="hudTR"><div class="cov" id="hCov">0%</div><div class="covSub" id="hCovSub">FIELD COVERED</div><div class="bar"><i id="hCovBar"></i></div>
+    <div class="row"><span>Distance to pilot</span><b id="hDist">0 m</b></div>
+    <div class="row"><span>Line</span><b id="hLine">—</b></div>
+    <div class="row"><span>Detail now</span><b id="hGsd">—</b></div>
+    <div class="row"><span>Sim speed</span><b id="hWarp">1×</b></div>
+  </div>
+  <div class="hud panel" id="wind"><svg width="38" height="38" viewBox="-19 -19 38 38"><circle r="17" fill="none" stroke="rgba(255,255,255,.25)"/><g id="windArrow"><path d="M0,-13 L5,3 L0,0 L-5,3 Z" fill="#8fe0b5"/></g></svg><div><div id="windTxt" style="color:#fff;font-size:13px"></div><div style="font-size:9.5px;letter-spacing:.12em;color:#8e9b93">WIND · ARROW POINTS DOWNWIND</div></div></div>
+  <div class="hud" id="msgs"></div>
+  <div class="hud" id="warn"></div>
+  <div class="hud" id="pip"></div><div class="hud mono" id="pipLbl">WALKSNAIL · 1080P · LOOKING DOWN</div>
+  <div class="hud panel" id="hudBL"><span class="x" id="helpX">hide</span>
+    <kbd>SPACE</kbd> arm / take off &nbsp; <kbd>R</kbd><kbd>F</kbd> throttle / climb<br>
+    <kbd>W</kbd><kbd>S</kbd> forward·nose down / back·nose up &nbsp; <kbd>A</kbd><kbd>D</kbd> roll &nbsp; <kbd>Q</kbd><kbd>E</kbd> yaw<br>
+    <kbd>T</kbd> wing flight &nbsp; <kbd>H</kbd> hover &nbsp; <kbd>M</kbd> auto mission &nbsp; <kbd>B</kbd> return home<br>
+    <kbd>C</kbd> camera &nbsp; <kbd>+</kbd><kbd>−</kbd> sim speed &nbsp; <kbd>P</kbd> pause &nbsp; <kbd>ESC</kbd> end flight · gamepad supported
+  </div>
+  <div class="hud panel" id="ctrlBar">
+    <button data-m="QLOITER">HOVER</button><button data-m="FBWA">WING</button><button data-m="AUTO">AUTO</button><button data-m="QRTL">HOME</button>
+    <button id="bCam">CAM: CHASE</button><button id="bWarp">1×</button><button id="bEnd">END</button>
+  </div>
+  <div id="startOverlay"><div class="panel"><h3 id="soTitle">Ready on the pad</h3><p id="soText"></p><button class="btn" id="soGo">Start</button></div></div>
+</section>
+
+<section class="screen" id="debrief"><div class="card"><canvas id="dbCanvas" width="600" height="720"></canvas><div class="r">
+  <div class="kicker mono" id="dbKicker">MISSION COMPLETE</div><h2 id="dbTitle"></h2>
+  <div class="bigstars" id="dbStars"></div><div class="score mono" id="dbScore"></div>
+  <table id="dbTable"></table><div class="reasons" id="dbReasons"></div>
+  <div class="btns"><button class="btn" id="dbNext">Next level ▸</button><button class="btn dark" id="dbRetry">Re-plan & retry</button><button class="btn ghost" id="dbMenu">Campaign</button></div>
+</div></div></section>
+
+<section class="screen" id="free"><div id="freeMap"></div>
+  <div id="freePanel"><h3>Free play</h3><p>Click any crop field to select its USDA outline, or zoom anywhere in the US. Fields appear once you zoom in past county level.</p>
+    <div id="freeJump"></div>
+    <div class="sel" id="freeSel">No field selected yet.</div>
+    <div class="ctl"><div class="lbl"><span>Wind</span><b id="vFW">8 mph</b></div><input type="range" id="sFW" min="0" max="25" value="8"></div>
+    <div class="ctl"><div class="lbl"><span>Wind from</span><b id="vFWD">S</b></div><input type="range" id="sFWD" min="0" max="359" value="180"></div>
+    <div class="ctl"><div class="lbl"><span>Detail target</span><b id="vFG">20 cm/px</b></div><input type="range" id="sFG" min="15" max="40" value="20"></div>
+    <button class="btn" style="width:100%" id="bFreeGo" disabled>Plan this field ▸</button>
+    <p style="font-size:11px;color:var(--ink-3);margin:12px 0 0">Field outlines: USDA NASS Crop Sequence Boundaries (via Fields of the World). Imagery: Esri World Imagery. Elevation: USGS 3DEP.</p>
+  </div>
+</section>
+<div class="loading mono" id="loading">LOADING…</div>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+<script type="module" src="game.js"></script>
+</body>
+</html>
