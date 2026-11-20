@@ -48,9 +48,29 @@ export class Course {
       return { ...p, D: -(terrain.at(p.N, p.E) + p.alt), n: [n[0], n[1], 0], get c() { return [this.N, this.E, this.D]; }, state: 'todo' };
     });
     for (const q of path) q.D = -(terrain.at(q.N, q.E) + q.alt);
-    this.next = 0; this.clips = 0; this.penalty = 0; this.splits = [];
+    this.next = 0; this.clips = 0; this.penalty = 0; this.splits = []; this.missed = 0;
+  }
+  // rings along a survey plan: they mark each mapping line, entry to exit, so the plan is the course
+  static fromSurvey(wps, alt, terrain, home, radius = 12, lead = 200) {
+    const c = Object.create(Course.prototype);
+    c.def = null; c.home = home; c.r = radius; c.survey = true; c.rings = []; c.lineOf = [];
+    for (let j = 0; j + 1 < wps.length; j += 2) {
+      const a = wps[j], b = wps[j + 1], L = Math.hypot(b.N - a.N, b.E - a.E); if (L < 1) continue;
+      const u = [(b.N - a.N) / L, (b.E - a.E) / L];
+      const s0 = j === 0 ? Math.min(lead + Math.max(0, alt * 0.4 - 8) * 6, L * 0.6) : Math.min(lead, L * 0.4), s1 = L - Math.min(45, L * 0.25);
+      if (L < 140) continue;   // edge sliver: too short to line up on
+      const ss = s1 - s0 < 50 ? [s1] : (() => { const k = Math.max(1, Math.ceil((s1 - s0) / 190)); return Array.from({ length: k + 1 }, (_, i) => s0 + (s1 - s0) * i / k); })();
+      for (const t of ss) {
+        const N = a.N + u[0] * t, E = a.E + u[1] * t;
+        c.rings.push({ N, E, alt, D: -(terrain.at(N, E) + alt), n: [u[0], u[1], 0], get c() { return [this.N, this.E, this.D]; }, state: 'todo', line: j / 2 });
+      }
+    }
+    c.path = [{ N: home[0], E: home[1] }, ...wps.map(w => ({ N: w.N, E: w.E })), { N: home[0], E: home[1] }];
+    c.next = 0; c.clips = 0; c.penalty = 0; c.splits = []; c.missed = 0;
+    return c;
   }
   get done() { return this.next >= this.rings.length; }
+  get passed() { return this.next - this.missed; }
   // returns an event or null for the segment p0 -> p1 (NED)
   check(p0, p1, t) {
     for (let k = this.next; k < Math.min(this.rings.length, this.next + 3); k++) {
@@ -58,7 +78,11 @@ export class Course {
       if (!(s0 < 0 && s1 >= 0)) continue;
       const f = s0 / (s0 - s1), x = [p0[0] + (p1[0] - p0[0]) * f, p0[1] + (p1[1] - p0[1]) * f, p0[2] + (p1[2] - p0[2]) * f];
       const d = sub3(x, C), along = dot3(d, R.n), rad = Math.hypot(d[0] - along * R.n[0], d[1] - along * R.n[1], d[2]);
-      if (rad > this.r + 1.3) continue;                       // went past it, not through it
+      if (rad > this.r + 1.3) {                               // went past it, not through it
+        // on a survey you keep going: a ring you fly past on its own line counts as missed
+        if (this.survey && k === this.next && rad < 70) { R.state = 'missed'; this.missed++; this.next++; return { type: 'miss', ring: k, rad, last: this.done }; }
+        continue;
+      }
       if (k !== this.next) return { type: 'order', ring: k, want: this.next };
       const clip = rad > this.r - 0.6;                        // wingtip (0.8 m) touched the ring
       R.state = 'done'; this.next++; this.splits.push(t);

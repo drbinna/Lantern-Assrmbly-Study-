@@ -8,6 +8,9 @@ A browser flight simulator for the Stork VTOL mapping real farm fields. Part of 
 - **Flight model (`sim.js`):** 6-DOF quadplane built from the Stork's measured wing (0.30 m², 1.61 m span)
   and motor layout, with ArduPilot-style modes (QLOITER, FBWA, AUTO, QRTL), transitions, wind and gusts,
   weathervaning, a battery/power model and ground contact.
+- **Rings on every field:** each survey plan (campaign and free play) is turned into a ring course along the
+  mapping lines at the chosen altitude. Rings show how to fly the plan; the field is complete only when every
+  ring is flown (or missed) and you land on the pad. Missing a ring costs the third star.
 - **Ring courses (`course.js`):** fly through floating rings in order, then land on the pad. Rings sit on a
   smooth racing line (centripetal Catmull-Rom) that the autopilot can follow for a demo lap; clipping a ring
   with a wingtip costs 3 s. Par times come from autopilot laps on fixed gust seeds.

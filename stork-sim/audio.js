@@ -94,7 +94,7 @@ export class StorkAudio {
   ring(k, n) { // rising chime as you progress through the course
     if (!this.on) return; const t = this.ctx.currentTime + 0.01;
     const scale = [0, 2, 4, 7, 9, 12, 14, 16, 19, 21, 24, 26, 28, 31];
-    const f = 660 * Math.pow(2, scale[Math.min(k, scale.length - 1)] / 12);
+    const f = 660 * Math.pow(2, scale[k % scale.length] / 12);
     this._tone(f, t, 0.5, 'sine', 0.22); this._tone(f * 1.5, t + 0.07, 0.45, 'sine', 0.14); this._tone(f * 2, t + 0.07, 0.3, 'triangle', 0.05);
     this._noise(t, 0.35, 6000, 2500, 0.05, 'highpass');
   }
