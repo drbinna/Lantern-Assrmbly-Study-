@@ -132,6 +132,27 @@ body.flying header.top{display:none}
 #freeJump{display:flex;gap:6px;flex-wrap:wrap;margin-bottom:12px}
 .loading{position:fixed;inset:0;z-index:50;display:none;place-items:center;background:rgba(241,240,235,.85);font-size:11px;letter-spacing:.2em;color:var(--ink-3)}
 .loading.on{display:grid}
+/* ---------- ring courses ---------- */
+.secHead{margin-top:46px;display:flex;justify-content:space-between;align-items:flex-end;gap:20px;flex-wrap:wrap}
+.secHead h2{margin:0;font-size:28px;letter-spacing:-.02em;font-weight:600}.secHead p{margin:6px 0 0;font-size:14px;color:var(--ink-2);max-width:60ch;line-height:1.6}
+#courseGrid{margin-top:20px}
+.lvl.course .img::after{content:"";position:absolute;inset:0;background:radial-gradient(circle at 30% 60%,transparent 26px,rgba(255,181,71,.95) 27px,rgba(255,181,71,.95) 33px,transparent 34px),radial-gradient(circle at 62% 42%,transparent 20px,rgba(255,255,255,.9) 21px,rgba(255,255,255,.9) 25px,transparent 26px),radial-gradient(circle at 84% 30%,transparent 14px,rgba(255,255,255,.75) 15px,rgba(255,255,255,.75) 18px,transparent 19px)}
+.lvl.course .img .tag{z-index:1}
+#hudCourse{right:16px;top:16px;padding:12px 14px;width:250px;display:none}
+#hudCourse .big{font-family:"Archivo";font-size:34px;font-weight:700;line-height:1}#hudCourse .big small{font-size:18px;color:#a9b6ae;font-weight:500}
+#hudCourse .covSub{font-size:10px;color:#a9b6ae;letter-spacing:.12em;margin:4px 0 8px}
+#hudCourse .row{display:flex;justify-content:space-between;font-size:11.5px;color:#cfd8d2;margin-top:6px}#hudCourse .row b{color:#fff;font-weight:500}
+#hudCourse .clock{font-family:"Archivo";font-size:22px;font-weight:600;margin-top:10px;letter-spacing:.01em}
+body.course #wind{top:270px}body.course #hudTR{display:none}body.course #hudCourse{display:block}
+#ringMarker{position:absolute;z-index:4;pointer-events:none;transform:translate(-50%,-50%);display:none;text-align:center;font-family:"JetBrains Mono",monospace;color:#fff;text-shadow:0 1px 3px rgba(0,0,0,.7)}
+#ringMarker .dot{width:34px;height:34px;margin:0 auto 4px;border:2px solid #ffb547;border-radius:50%;box-shadow:0 0 12px rgba(255,181,71,.7)}
+#ringMarker .arr{display:none;width:0;height:0;margin:0 auto 4px;border-left:13px solid transparent;border-right:13px solid transparent;border-bottom:22px solid #ffb547;filter:drop-shadow(0 0 6px rgba(255,181,71,.8))}
+#ringMarker.off .dot{display:none}#ringMarker.off .arr{display:block}
+#ringMarker span{font-size:11px;background:rgba(16,20,18,.6);padding:2px 6px;border-radius:5px}
+#flash{position:absolute;inset:0;z-index:3;pointer-events:none;opacity:0;transition:opacity .5s;background:radial-gradient(ellipse at center,transparent 45%,rgba(143,224,181,.45))}
+#flash.bad{background:radial-gradient(ellipse at center,transparent 45%,rgba(255,107,91,.45))}
+#bigMsg{position:absolute;left:50%;top:32%;transform:translate(-50%,-50%) scale(.9);z-index:6;pointer-events:none;font-family:"Archivo";font-weight:700;font-size:44px;color:#fff;letter-spacing:-.01em;text-shadow:0 4px 24px rgba(0,0,0,.45);opacity:0;transition:opacity .35s,transform .35s;text-align:center}
+#bigMsg.on{opacity:1;transform:translate(-50%,-50%) scale(1)}#bigMsg small{display:block;font-family:"JetBrains Mono";font-size:13px;font-weight:500;letter-spacing:.14em;color:#d8e4dc;margin-top:6px}
 @media(max-width:900px){#plan.on{grid-template-columns:1fr}#planMapWrap{height:46vh}#planSide{margin-top:0}#pip{display:none}#hudBL{display:none}#debrief .card{grid-template-columns:1fr}#debrief canvas{width:100%;min-height:200px}}
 </style>
 </head>
@@ -146,6 +167,9 @@ body.flying header.top{display:none}
   <h1>Map every acre.<br><b>Bring it home.</b></h1>
   <p class="lede">Fly the Stork VTOL over real Oklahoma farmland. Plan the survey, take off like a quadcopter, transition to wing flight, and cover the field with the Walksnail camera before the battery runs low. The flight model is built from the Stork's measured wing, tail and motor layout.</p>
   <div class="grid" id="levelGrid"></div>
+  <div class="secHead"><div><div class="kicker mono" style="margin-bottom:8px">NEW · RING COURSES</div><h2>Fly the rings</h2>
+    <p>Thread the Stork through floating rings over the same real fields, in order, then land back on the pad. Every ring and every clip counts against the clock. Turn your sound on: the motors are synthesised live from the flight model.</p></div></div>
+  <div class="grid" id="courseGrid"></div>
   <div class="how">
     <div><b>1 · Plan</b>Pick your altitude, line direction, overlap and launch spot. Higher isn't always wider: the fisheye gets too blurry at the edges.</div>
     <div><b>2 · Fly</b>Run the mission on autopilot, or fly it yourself for a 25% bonus. Wind pushes you off the lines; banked turns tilt the camera off the ground.</div>
@@ -194,6 +218,15 @@ body.flying header.top{display:none}
     <div class="row"><span>Detail now</span><b id="hGsd">—</b></div>
     <div class="row"><span>Sim speed</span><b id="hWarp">1×</b></div>
   </div>
+  <div class="hud panel" id="hudCourse"><div class="big" id="cRings">0<small> / 8</small></div><div class="covSub" id="cSub">RINGS</div><div class="bar"><i id="cBar"></i></div>
+    <div class="clock" id="cClock">0:00.0</div>
+    <div class="row"><span>Next ring</span><b id="cNext">—</b></div>
+    <div class="row"><span>Height to ring</span><b id="cHt">—</b></div>
+    <div class="row"><span>Clips</span><b id="cClips">0</b></div>
+    <div class="row"><span>Par ★★★ / ★★</span><b id="cPar">—</b></div>
+  </div>
+  <div id="ringMarker"><div class="dot"></div><div class="arr" id="ringArr"></div><span id="ringTxt"></span></div>
+  <div id="flash"></div><div id="bigMsg"></div>
   <div class="hud panel" id="wind"><svg width="38" height="38" viewBox="-19 -19 38 38"><circle r="17" fill="none" stroke="rgba(255,255,255,.25)"/><g id="windArrow"><path d="M0,-13 L5,3 L0,0 L-5,3 Z" fill="#8fe0b5"/></g></svg><div><div id="windTxt" style="color:#fff;font-size:13px"></div><div style="font-size:9.5px;letter-spacing:.12em;color:#8e9b93">WIND · ARROW POINTS DOWNWIND</div></div></div>
   <div class="hud" id="msgs"></div>
   <div class="hud" id="warn"></div>
@@ -202,13 +235,13 @@ body.flying header.top{display:none}
     <kbd>SPACE</kbd> arm / take off &nbsp; <kbd>R</kbd><kbd>F</kbd> throttle / climb<br>
     <kbd>W</kbd><kbd>S</kbd> forward·nose down / back·nose up &nbsp; <kbd>A</kbd><kbd>D</kbd> roll &nbsp; <kbd>Q</kbd><kbd>E</kbd> yaw<br>
     <kbd>T</kbd> wing flight &nbsp; <kbd>H</kbd> hover &nbsp; <kbd>M</kbd> auto mission &nbsp; <kbd>B</kbd> return home<br>
-    <kbd>C</kbd> camera &nbsp; <kbd>+</kbd><kbd>−</kbd> sim speed &nbsp; <kbd>P</kbd> pause &nbsp; <kbd>ESC</kbd> end flight · gamepad supported
+    <kbd>C</kbd> camera &nbsp; <kbd>N</kbd> sound &nbsp; <kbd>+</kbd><kbd>−</kbd> sim speed &nbsp; <kbd>P</kbd> pause &nbsp; <kbd>ESC</kbd> end flight · gamepad supported
   </div>
   <div class="hud panel" id="ctrlBar">
     <button data-m="QLOITER">HOVER</button><button data-m="FBWA">WING</button><button data-m="AUTO">AUTO</button><button data-m="QRTL">HOME</button>
-    <button id="bCam">CAM: CHASE</button><button id="bWarp">1×</button><button id="bEnd">END</button>
+    <button id="bCam">CAM: CHASE</button><button id="bSnd">SOUND ON</button><button id="bWarp">1×</button><button id="bEnd">END</button>
   </div>
-  <div id="startOverlay"><div class="panel"><h3 id="soTitle">Ready on the pad</h3><p id="soText"></p><button class="btn" id="soGo">Start</button></div></div>
+  <div id="startOverlay"><div class="panel"><h3 id="soTitle">Ready on the pad</h3><p id="soText"></p><button class="btn" id="soGo">Start</button><button class="btn dark" id="soAlt" style="display:none">Watch demo lap</button></div></div>
 </section>
 
 <section class="screen" id="debrief"><div class="card"><canvas id="dbCanvas" width="600" height="720"></canvas><div class="r">

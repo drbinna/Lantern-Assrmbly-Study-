@@ -8,6 +8,12 @@ A browser flight simulator for the Stork VTOL mapping real farm fields. Part of 
 - **Flight model (`sim.js`):** 6-DOF quadplane built from the Stork's measured wing (0.30 m², 1.61 m span)
   and motor layout, with ArduPilot-style modes (QLOITER, FBWA, AUTO, QRTL), transitions, wind and gusts,
   weathervaning, a battery/power model and ground contact.
+- **Ring courses (`course.js`):** fly through floating rings in order, then land on the pad. Rings sit on a
+  smooth racing line (centripetal Catmull-Rom) that the autopilot can follow for a demo lap; clipping a ring
+  with a wingtip costs 3 s. Par times come from autopilot laps on fixed gust seeds.
+- **Sound (`audio.js`):** synthesised live with Web Audio, no recordings. Each lift motor and the pusher is an
+  oscillator at its blade-pass frequency (RPM from thrust, 2 blades) plus motor whine (7 pole pairs),
+  prop-wash and wind noise, distance filtering from the camera, ESC arming tones, ring chimes and crash sounds.
 - **Camera:** Walksnail Avatar HD Pro modelled as a 160° equidistant fisheye, 1920 px wide, looking down.
   Coverage only counts where ground detail meets the level's cm/px target.
 

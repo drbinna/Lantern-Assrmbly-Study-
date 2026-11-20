@@ -1,4 +1,7 @@
 import { Sim, Terrain, planSurvey, Coverage, swathAt, gsdNadir, eulerFromQ, AC, pointInPoly } from './sim.js';
+import { COURSES, Course } from './course.js';
+import { StorkAudio } from './audio.js';
+const audio = new StorkAudio();
 
 const $ = id => document.getElementById(id);
 const CAMPAIGN = ['L1', 'L2', 'L3'];
@@ -7,9 +10,10 @@ const VLOS = 1000, CEIL = 122, DT = 0.005;
 const store = { get(k, d) { try { return JSON.parse(localStorage.getItem('stork-sim:' + k)) ?? d; } catch { return d; } },
                 set(k, v) { try { localStorage.setItem('stork-sim:' + k, JSON.stringify(v)); } catch {} } };
 const fmtT = s => `${Math.floor(s / 60)}:${String(Math.floor(s % 60)).padStart(2, '0')}`;
+const fmtT1 = s => `${Math.floor(s / 60)}:${(s % 60).toFixed(1).padStart(4, '0')}`;
 const mph = ms => ms * 2.237;
 const compass = d => ['N', 'NNE', 'NE', 'ENE', 'E', 'ESE', 'SE', 'SSE', 'S', 'SSW', 'SW', 'WSW', 'W', 'WNW', 'NW', 'NNW'][Math.round(((d % 360) + 360) % 360 / 22.5) % 16];
-function show(id) { document.querySelectorAll('.screen').forEach(s => s.classList.toggle('on', s.id === id)); document.body.classList.toggle('flying', id === 'fly'); }
+function show(id) { document.querySelectorAll('.screen').forEach(s => s.classList.toggle('on', s.id === id)); document.body.classList.toggle('flying', id === 'fly'); if (id !== 'fly') audio.update({ active: false }); }
 function loading(on, txt = 'LOADING…') { $('loading').textContent = txt; $('loading').classList.toggle('on', on); }
 
 // ======================= levels =======================
@@ -40,6 +44,16 @@ async function buildMenu() {
   const f = document.createElement('div'); f.className = 'lvl free';
   f.innerHTML = `<div class="img mono">ANY FIELD IN THE US</div><div class="body"><h3>Free play</h3><p>Pick any real crop field on the satellite map, set the wind, and fly it.</p><div class="meta mono"><span>USDA FIELD OUTLINES</span><span>ESRI IMAGERY</span></div></div>`;
   f.onclick = openFree; g.appendChild(f);
+  const cg = $('courseGrid'); cg.innerHTML = '';
+  for (const def of Object.values(COURSES)) {
+    const meta = cache['meta' + def.level]; const best = store.get('course:' + def.key, null);
+    const el = document.createElement('div'); el.className = 'lvl course';
+    el.innerHTML = `<div class="img" style="background-image:url(levels/${meta.image})"><span class="tag mono">${def.sub.toUpperCase()}</span></div>
+      <div class="body"><h3>${def.title}</h3><p>${def.rings.length} rings over ${meta.title.toLowerCase() === 'first flight' ? 'the First Flight wheat field' : 'the ' + meta.title + ' field'}. Wind ${Math.round(mph(meta.wind.speed))} mph from the ${compass(meta.wind.from)}.</p>
+      <div class="meta mono"><span class="stars">${'<b>★</b>'.repeat(best?.stars || 0)}${'★'.repeat(3 - (best?.stars || 0))}</span><span>${best ? 'BEST ' + fmtT1(best.time) : 'PAR ' + fmtT(def.par[0])}</span></div></div>`;
+    el.onclick = () => startCourse(def.key, false);
+    cg.appendChild(el);
+  }
 }
 
 // ======================= planning =======================
@@ -249,7 +263,7 @@ function buildWorld(L) {
     const last = P[P.length - 1]; arr.push(new THREE.Vector3(last[0], L.terr.at(last[1], last[0]) + lift, -last[1]));
     return new THREE.Line(new THREE.BufferGeometry().setFromPoints(arr), new THREE.LineBasicMaterial({ color }));
   };
-  g.add(drape(L.ring, 0xffb547, 0.8, true));
+  if (!plan.course) g.add(drape(L.ring, 0xffb547, 0.8, true));
   const ring = []; for (let i = 0; i < 128; i++) { const a = i / 128 * Math.PI * 2; ring.push([plan.home[1] + Math.sin(a) * VLOS, plan.home[0] + Math.cos(a) * VLOS]); }
   g.add(drape(ring, 0xff6b5b, 1.5, true));
   // flight lines at mission altitude
@@ -299,7 +313,8 @@ let F = null;   // current flight
 const keys = {};
 addEventListener('keydown', e => {
   if (!$('fly').classList.contains('on')) return;
-  const k = e.key.toLowerCase(); keys[k] = true;
+  const k = e.key.toLowerCase(); keys[k] = true; audio.ensure();
+  if (k === 'n') toggleSound();
   if ([' ', 'arrowup', 'arrowdown', 'arrowleft', 'arrowright'].includes(k)) e.preventDefault();
   if (!F || F.over) return;
   if (k === ' ') toggleArm();
@@ -319,12 +334,15 @@ function modeReq(m) {
   if (m === 'FBWA' && (s.mode === 'DISARMED' || s.agl() < 10)) { toast('Climb above 10 m before switching to wing flight', true); return; }
   if (m === 'QRTL' && s.mode === 'DISARMED') return;
   if (m === 'AUTO') { const wi = s.wpIdx; s.setMode('AUTO'); F.usedAuto = true; F.started = true; hideStart();
-    if (s.agl() > 8) { s.autoStage = s.trans >= 1 || s.airspeed > 12 ? 'WP' : 'TAKEOFF'; s.wpIdx = Math.min(wi, s.mission.wps.length - 1); } return; }
+    if (s.agl() > 8) { s.autoStage = s.trans >= 1 || s.airspeed > 12 ? 'WP' : 'TAKEOFF'; s.wpIdx = F.course ? F.course.resumeIdx(s.p) : Math.min(wi, s.mission.wps.length - 1); }
+    if (F.course && !F.demo) toast('Autopilot is flying the course: this run will not count'); return; }
   s.setMode(m);
 }
 function setWarp(w) { F.warp = Math.max(1, Math.min(16, w)); $('bWarp').textContent = F.warp + '×'; $('hWarp').textContent = F.warp + '×'; }
 const CAMS = ['CHASE', 'ORBIT', 'MAP', 'WALKSNAIL'];
 function cycleCam() { F.cam = (F.cam + 1) % CAMS.length; $('bCam').textContent = 'CAM: ' + CAMS[F.cam]; }
+function toggleSound() { audio.ensure(); audio.setMuted(!audio.muted); $('bSnd').textContent = audio.muted ? 'SOUND OFF' : 'SOUND ON'; }
+$('bSnd').onclick = toggleSound; $('bSnd').textContent = audio.muted ? 'SOUND OFF' : 'SOUND ON';
 $('bCam').onclick = () => cycleCam(); $('bWarp').onclick = () => setWarp(F.warp >= 16 ? 1 : F.warp * 2); $('bEnd').onclick = () => endFlight('Flight ended');
 document.querySelectorAll('#ctrlBar [data-m]').forEach(b => b.onclick = () => { if (b.dataset.m !== 'QRTL' && F.sim.mode === 'DISARMED' && b.dataset.m !== 'AUTO') toggleArm(); modeReq(b.dataset.m); });
 $('helpX').onclick = () => $('hudBL').style.display = 'none';
@@ -344,6 +362,7 @@ function toast(s, bad) {
 function hideStart() { $('startOverlay').style.display = 'none'; }
 
 async function startFlight(auto) {
+  audio.ensure(); document.body.classList.remove('course'); $('soAlt').style.display = 'none'; $('ringMarker').style.display = 'none';
   computePlan();
   loading(true, 'PREPARING THE FIELD…');
   await loadModel();
@@ -353,7 +372,7 @@ async function startFlight(auto) {
   const sim = new Sim({ terrain: L.terr, home: plan.home, homeYaw: yaw0, wind: L.wind, seed: 7 });
   sim.mission = { alt: plan.alt, wps: plan.wps, spd: plan.spd };
   const cov = new Coverage(L.ring, L.acres > 400 ? 6 : 4);
-  F = { sim, cov, auto, warp: 1, cam: 0, paused: false, acc: 0, nextCam: 0, vlosT: 0, ceilT: 0, msgSeen: 0, usedAuto: false, started: false, over: false, track: [], lastOv: 0, gsdNow: null };
+  F = { sim, cov, auto, prevMode: sim.mode, warp: 1, cam: 0, paused: false, acc: 0, nextCam: 0, vlosT: 0, ceilT: 0, msgSeen: 0, usedAuto: false, started: false, over: false, track: [], lastOv: 0, gsdNow: null };
   drawOverlay(cov, L.gsd);
   setWarp(auto ? 4 : 1);
   orb = { az: 0, el: 0.35, dist: 9, drag: null };
@@ -362,8 +381,180 @@ async function startFlight(auto) {
   $('soText').innerHTML = auto ? `The autopilot will take off, fly ${Math.ceil(plan.wps.length / 2)} lines at ${plan.alt} m and land back on the pad. You can take over any time with <b>H</b> (hover) or <b>T</b> (wing). Running at 4× speed; use + and − to change it.`
     : `Press <b>SPACE</b> to arm, hold <b>R</b> to climb. Above 10 m press <b>T</b> to transition to wing flight. Fly the dashed lines, then <b>H</b> to hover and <b>F</b> to land on the pad. Fly the whole thing without AUTO for a 25% bonus.`;
   $('soGo').textContent = auto ? 'Start mission' : 'Got it';
-  $('soGo').onclick = () => { hideStart(); if (auto) modeReq('AUTO'); };
+  $('soGo').onclick = () => { audio.ensure(); hideStart(); if (auto) modeReq('AUTO'); };
   loading(false);
+}
+
+// ======================= ring courses =======================
+async function startCourse(key, demo) {
+  audio.ensure();
+  const def = COURSES[key];
+  loading(true, 'BUILDING THE COURSE…');
+  L = await loadLevel(def.level);
+  await loadModel();
+  plan = { key: def.key, course: true, home: [...L.home], wps: [], alt: def.rings[0][2] };
+  show('fly'); document.body.classList.add('course'); resizeFly();
+  buildWorld(L);
+  const course = new Course(def, L.terr, L.home);
+  buildCourse(course);
+  const first = course.path[3];
+  const sim = new Sim({ terrain: L.terr, home: plan.home, homeYaw: Math.atan2(first.E - plan.home[1], first.N - plan.home[0]), wind: L.wind, seed: demo ? def.demoSeed : 1 + Math.floor(Math.random() * 1e6) });
+  sim.mission = course.mission(17);
+  F = { sim, cov: null, course, def, demo, prevMode: sim.mode, prevP: [...sim.p], cevents: [], warp: 1, cam: 0, paused: false, acc: 0, nextCam: 0, vlosT: 0, ceilT: 0, msgSeen: 0, usedAuto: !!demo, started: false, over: false, track: [] };
+  setWarp(1); orb = { az: 0, el: 0.35, dist: 9, drag: null };
+  $('cRings').innerHTML = `0<small> / ${course.rings.length}</small>`; $('cPar').textContent = `${fmtT(def.par[0])} / ${fmtT(def.par[1])}`;
+  $('startOverlay').style.display = '';
+  $('soTitle').textContent = def.title;
+  $('soText').innerHTML = `${def.brief}<br><br>Fly through all <b>${course.rings.length} rings in order</b> (the orange one is next), then land on the <b>H</b> pad. Clipping a ring with a wingtip costs 3 s. Par for ★★★ is <b>${fmtT(def.par[0])}</b>.<br><span style="color:#8e9b93;font-size:12px">SPACE arm · R climb · T wing flight · A/D bank · W/S pitch · R/F speed · H hover · F descend · N sound</span>`;
+  $('soGo').textContent = 'Fly it'; $('soAlt').style.display = demo ? 'none' : '';
+  $('soGo').onclick = () => { audio.ensure(); hideStart(); };
+  $('soAlt').onclick = () => startCourse(key, true);
+  loading(false);
+  if (demo) { hideStart(); modeReq('AUTO'); F.usedAuto = true; bigMsg('Demo lap', 'AUTOPILOT · PRESS + TO SPEED UP'); }
+}
+
+function buildCourse(course) {
+  const g = new THREE.Group(); world.group.add(g); world.course = { group: g, rings: [], fx: [] };
+  const tube = 0.32, R = course.r;
+  const geo = new THREE.TorusGeometry(R, tube, 14, 72), disc = new THREE.CircleGeometry(R - tube, 48);
+  const poleMat = new THREE.MeshLambertMaterial({ color: 0x5d6560 });
+  course.rings.forEach((r, k) => {
+    const mat = new THREE.MeshStandardMaterial({ color: 0xffffff, emissive: 0x000000, roughness: 0.35, metalness: 0.15, transparent: true, opacity: 0.85 });
+    const m = new THREE.Mesh(geo, mat); const c = n2t(r.N, r.E, r.D); m.position.copy(c);
+    m.quaternion.setFromUnitVectors(new THREE.Vector3(0, 0, 1), n2t(r.n[0], r.n[1], 0).normalize());
+    const dm = new THREE.MeshBasicMaterial({ color: 0xffb547, transparent: true, opacity: 0, side: THREE.DoubleSide, depthWrite: false });
+    const d = new THREE.Mesh(disc, dm); m.add(d);
+    const gy = L.terr.at(r.N, r.E), h = c.y - R - gy;
+    const pole = new THREE.Mesh(new THREE.CylinderGeometry(0.09, 0.12, h, 8), poleMat); pole.position.set(c.x, gy + h / 2, c.z);
+    const cv = document.createElement('canvas'); cv.width = cv.height = 128; const x = cv.getContext('2d');
+    x.fillStyle = 'rgba(16,20,18,.75)'; x.beginPath(); x.arc(64, 64, 52, 0, 7); x.fill(); x.fillStyle = '#fff'; x.font = '700 64px Archivo'; x.textAlign = 'center'; x.textBaseline = 'middle'; x.fillText(k + 1, 64, 68);
+    const lab = new THREE.Sprite(new THREE.SpriteMaterial({ map: new THREE.CanvasTexture(cv), depthWrite: false })); lab.scale.set(3.2, 3.2, 1); lab.position.set(c.x, c.y + R + 2.6, c.z);
+    g.add(m, pole, lab); world.course.rings.push({ m, mat, dm, lab, c });
+  });
+  const pts = course.path.map(q => new THREE.Vector3(q.E, -q.D, -q.N));
+  const line = new THREE.Line(new THREE.BufferGeometry().setFromPoints(pts), new THREE.LineDashedMaterial({ color: 0xffffff, dashSize: 6, gapSize: 6, transparent: true, opacity: 0.45 }));
+  line.computeLineDistances(); g.add(line);
+}
+function courseFx(c, color, n = 70) {
+  const pos = new Float32Array(n * 3), vel = [];
+  for (let i = 0; i < n; i++) { pos.set([c.x, c.y, c.z], i * 3); const v = new THREE.Vector3(Math.random() - 0.5, Math.random() - 0.3, Math.random() - 0.5).normalize().multiplyScalar(6 + Math.random() * 10); vel.push(v); }
+  const geo = new THREE.BufferGeometry(); geo.setAttribute('position', new THREE.BufferAttribute(pos, 3));
+  const pts = new THREE.Points(geo, new THREE.PointsMaterial({ color, size: 0.55, transparent: true, opacity: 1, depthWrite: false }));
+  world.course.group.add(pts); world.course.fx.push({ pts, vel, age: 0 });
+}
+function bigMsg(t, sub) { const b = $('bigMsg'); b.innerHTML = `${t}${sub ? `<small>${sub}</small>` : ''}`; b.classList.add('on'); clearTimeout(b._t); b._t = setTimeout(() => b.classList.remove('on'), 1600); }
+function flash(bad) { const f = $('flash'); f.classList.toggle('bad', !!bad); f.style.transition = 'none'; f.style.opacity = 1; requestAnimationFrame(() => { f.style.transition = 'opacity .6s'; f.style.opacity = 0; }); }
+function onCourseEvent(ev) {
+  const C = F.course, n = C.rings.length, R = world.course.rings[ev.ring];
+  if (ev.type === 'order') { if (!F.orderT || F.sim.t - F.orderT > 3) { F.orderT = F.sim.t; audio.wrong(); toast(`Wrong ring: fly through ring ${ev.want + 1} first`, true); } return; }
+  const t = F.sim.t, split = C.splits.length > 1 ? t - C.splits[C.splits.length - 2] : t;
+  if (ev.type === 'clip') { audio.clip(); flash(true); courseFx(R.c, 0xff8b6b, 40); toast(`Clipped ring ${ev.ring + 1}: +3 s`, true); }
+  else { audio.ring(ev.ring, n); flash(false); courseFx(R.c, 0x8fe0b5); }
+  if (ev.last) { audio.complete(); bigMsg('All rings!', 'NOW LAND ON THE PAD'); toast('Course complete. Hover (H) and land on the H pad to stop the clock'); }
+  else bigMsg(`${ev.ring + 1} / ${n}`, `SPLIT ${split.toFixed(1)} S${ev.type === 'clip' ? ' · +3 S' : ''}`);
+}
+const _v = new THREE.Vector3();
+function courseFrame(rdt, s) {
+  const C = F.course, W = world.course, tt = performance.now() / 1000;
+  W.rings.forEach((r, k) => {
+    const st = k < C.next ? 'done' : k === C.next ? 'next' : 'todo';
+    if (st === 'done') { r.mat.color.setHex(0x46e196); r.mat.emissive.setHex(0x0b3a24); r.mat.opacity = 0.28; r.dm.opacity = 0; r.lab.material.opacity = 0.25; r.m.scale.setScalar(1); }
+    else if (st === 'next') { r.mat.color.setHex(0xffb547); r.mat.emissive.setHex(0xb36b00); r.mat.emissiveIntensity = 0.6 + 0.4 * Math.sin(tt * 5); r.mat.opacity = 1; r.dm.opacity = 0.1 + 0.05 * Math.sin(tt * 5); r.lab.material.opacity = 1; r.m.scale.setScalar(1 + 0.03 * Math.sin(tt * 5)); }
+    else { r.mat.color.setHex(0xffffff); r.mat.emissive.setHex(0x222222); r.mat.opacity = k === C.next + 1 ? 0.8 : 0.55; r.dm.opacity = 0; r.lab.material.opacity = 0.8; r.m.scale.setScalar(1); }
+  });
+  for (let i = W.fx.length - 1; i >= 0; i--) {
+    const f = W.fx[i]; f.age += rdt; const a = f.pts.geometry.attributes.position;
+    for (let j = 0; j < f.vel.length; j++) { f.vel[j].y -= 4 * rdt; a.setXYZ(j, a.getX(j) + f.vel[j].x * rdt, a.getY(j) + f.vel[j].y * rdt, a.getZ(j) + f.vel[j].z * rdt); }
+    a.needsUpdate = true; f.pts.material.opacity = Math.max(0, 1 - f.age / 1.2);
+    if (f.age > 1.2) { W.group.remove(f.pts); f.pts.geometry.dispose(); W.fx.splice(i, 1); }
+  }
+  // marker for the next ring (or the pad once every ring is done)
+  const mk = $('ringMarker');
+  const tgt = C.done ? n2t(plan.home[0], plan.home[1], -L.terr.at(plan.home[0], plan.home[1]) - 1) : W.rings[C.next].c;
+  const dist = Math.hypot(tgt.x - n2t(...s.p).x, tgt.y - n2t(...s.p).y, tgt.z - n2t(...s.p).z);
+  if (F.cam === 2 || F.over) { mk.style.display = 'none'; return dist; }
+  mk.style.display = 'block';
+  _v.copy(tgt).project(F.cam === 3 ? pipCam : cam);
+  const behind = _v.z > 1, Wd = innerWidth, Hd = innerHeight;
+  let x = (_v.x * 0.5 + 0.5) * Wd, y = (-_v.y * 0.5 + 0.5) * Hd;
+  if (behind) { x = Wd - x; y = Hd - y; }
+  const off = behind || x < 40 || x > Wd - 40 || y < 40 || y > Hd - 40;
+  mk.classList.toggle('off', off);
+  if (!off && dist < 60) { mk.style.display = 'none'; return dist; }
+  if (off) {
+    const cx = Wd / 2, cy = Hd / 2, dx = x - cx, dy = y - cy, k = Math.min((Wd / 2 - 70) / Math.abs(dx || 1e-3), (Hd / 2 - 70) / Math.abs(dy || 1e-3));
+    x = cx + dx * k; y = cy + dy * k; $('ringArr').style.transform = `rotate(${Math.atan2(dy, dx) * 180 / Math.PI + 90}deg)`;
+  }
+  mk.style.left = x + 'px'; mk.style.top = y + 'px';
+  $('ringTxt').textContent = C.done ? `PAD · ${Math.round(dist)} m` : `${C.next + 1} · ${Math.round(dist)} m`;
+  return dist;
+}
+function hudCourse(s) {
+  const C = F.course, n = C.rings.length;
+  $('cRings').innerHTML = `${C.next}<small> / ${n}</small>`; $('cBar').style.width = C.next / n * 100 + '%';
+  $('cSub').textContent = C.done ? 'ALL RINGS · LAND ON THE PAD' : 'RINGS';
+  $('cClock').textContent = fmtT1(s.t + C.penalty) + (C.penalty ? ` (+${C.penalty}s)` : '');
+  const tgt = C.done ? { N: plan.home[0], E: plan.home[1], D: -L.terr.at(plan.home[0], plan.home[1]) } : C.rings[C.next];
+  $('cNext').textContent = Math.round(Math.hypot(tgt.N - s.p[0], tgt.E - s.p[1], tgt.D - s.p[2])) + ' m';
+  const dh = -(tgt.D - s.p[2]);
+  $('cHt').textContent = C.done ? '—' : Math.abs(dh) < 1.5 ? 'level' : (dh > 0 ? '↑ ' : '↓ ') + Math.round(Math.abs(dh)) + ' m';
+  $('cHt').style.color = C.done || Math.abs(dh) < C.r - 1 ? '' : '#ffc861';
+  $('cClips').textContent = C.clips ? `${C.clips} (+${C.clips * 3}s)` : '0';
+}
+function endCourse(why) {
+  if (!F || F.over) return; F.over = true; clearTimeout(F.endTimer);
+  const s = F.sim, C = F.course, def = F.def, n = C.rings.length;
+  const crashed = !!s.crashed, landed = s.landed && !crashed && C.done;
+  const offPad = Math.hypot(s.p[0] - plan.home[0], s.p[1] - plan.home[1]);
+  const padPen = landed && offPad > 8 ? 10 : 0, total = s.t + C.penalty + padPen;
+  let stars = 0; const reasons = [];
+  if (crashed) reasons.push('Crashed: ' + s.crashed + '.');
+  else if (!C.done) reasons.push(`Flew ${C.next} of ${n} rings before the flight ended.`);
+  else if (!landed) reasons.push('Every ring done, but the clock only stops when you land on the pad.');
+  else { stars = total <= def.par[0] ? 3 : total <= def.par[1] ? 2 : 1;
+    if (stars < 3) reasons.push(`Beat ${fmtT(def.par[stars === 2 ? 0 : 1])} for ${stars === 2 ? '★★★' : '★★'}. Fly wing-borne between rings, push the speed up with R, and descend fast in hover once you are over the pad.`); }
+  if (F.usedAuto) { reasons.unshift(F.demo ? 'That was the autopilot demo lap. Now try it yourself.' : 'The autopilot flew part of this run, so it does not count.'); stars = 0; }
+  if (padPen) reasons.push(`Landed ${offPad.toFixed(0)} m from the pad: +10 s.`);
+  if (stars && !F.usedAuto) { const best = store.get('course:' + def.key, null); if (!best || total < best.time) store.set('course:' + def.key, { time: total, stars: Math.max(stars, best?.stars || 0) }); else if (stars > best.stars) store.set('course:' + def.key, { ...best, stars }); }
+  const best = store.get('course:' + def.key, null);
+  $('dbKicker').textContent = F.demo ? 'DEMO LAP' : crashed ? 'CRASHED' : landed ? 'COURSE COMPLETE' : 'COURSE INCOMPLETE';
+  $('dbTitle').textContent = def.title;
+  $('dbStars').innerHTML = '<b>★</b>'.repeat(stars) + '★'.repeat(3 - stars);
+  $('dbScore').textContent = landed ? `TIME ${fmtT1(total)}${best && !F.usedAuto ? ' · BEST ' + fmtT1(best.time) : ''}` : `${C.next} / ${n} RINGS`;
+  const fast = C.splits.map((t, i) => t - (i ? C.splits[i - 1] : 0)).slice(1).reduce((a, b) => Math.min(a, b), 1e9);
+  const rows = [['Rings', `${C.next} / ${n}`], ['Ring clips', C.clips ? `${C.clips} (+${C.clips * 3} s)` : 'none'], ['Flight time', fmtT1(s.t)]];
+  if (landed) rows.push(['Landed from pad', offPad.toFixed(1) + ' m' + (padPen ? ' (+10 s)' : '')], ['Total time', fmtT1(total)]);
+  rows.push(['Par ★★★ / ★★', `${fmtT(def.par[0])} / ${fmtT(def.par[1])}`]);
+  if (fast < 1e9) rows.push(['Fastest ring-to-ring', fast.toFixed(1) + ' s']);
+  rows.push(['Battery left', Math.round(s.battPct() * 100) + '%'], ['Top airspeed', (F.maxVa || 0).toFixed(1) + ' m/s · ' + Math.round(mph(F.maxVa || 0)) + ' mph']);
+  $('dbTable').innerHTML = rows.map(r => `<tr><td>${r[0]}</td><td>${r[1]}</td></tr>`).join('');
+  $('dbReasons').textContent = reasons.join(' ') || 'Perfect run. Three stars.';
+  const keys = Object.keys(COURSES), idx = keys.indexOf(def.key);
+  $('dbNext').textContent = 'Next course ▸'; $('dbNext').style.display = idx < keys.length - 1 && (stars > 0 || F.demo) ? '' : 'none';
+  $('dbNext').onclick = () => startCourse(keys[idx + 1], false);
+  $('dbRetry').textContent = 'Fly again'; $('dbRetry').onclick = () => startCourse(def.key, false);
+  $('dbMenu').onclick = () => { show('menu'); buildMenu(); };
+  drawCourseMap(s);
+  $('ringMarker').style.display = 'none';
+  $('debrief').classList.add('on');
+}
+function drawCourseMap(s) {
+  const cv = $('dbCanvas'), c = cv.getContext('2d'), W = cv.width, H = cv.height, C = F.course;
+  let x0 = 1e9, x1 = -1e9, y0 = 1e9, y1 = -1e9; for (const q of C.path) { x0 = Math.min(x0, q.E); x1 = Math.max(x1, q.E); y0 = Math.min(y0, q.N); y1 = Math.max(y1, q.N); }
+  const sc = Math.min(W / (x1 - x0 + 140), H / (y1 - y0 + 160)), cx = (x0 + x1) / 2, cy = (y0 + y1) / 2;
+  const w2 = (E, N) => [W / 2 + (E - cx) * sc, H / 2 - (N - cy) * sc];
+  c.fillStyle = '#2a2f2b'; c.fillRect(0, 0, W, H);
+  const [ix, iy] = w2(-1000, 1000); c.drawImage(L.img, ix, iy, 2000 * sc, 2000 * sc); c.fillStyle = 'rgba(10,14,12,.25)'; c.fillRect(0, 0, W, H);
+  c.setLineDash([8, 8]); c.beginPath(); C.path.forEach((q, i) => { const p = w2(q.E, q.N); i ? c.lineTo(...p) : c.moveTo(...p); }); c.strokeStyle = 'rgba(255,255,255,.4)'; c.lineWidth = 2; c.stroke(); c.setLineDash([]);
+  c.beginPath(); F.track.forEach(([N, E], i) => { const p = w2(E, N); i ? c.lineTo(...p) : c.moveTo(...p); }); c.strokeStyle = '#8fe0b5'; c.lineWidth = 3; c.stroke();
+  C.rings.forEach((r, k) => { const [px, py] = w2(r.E, r.N), a = Math.atan2(-r.n[0], r.n[1]) + Math.PI / 2, h = Math.max(8, C.r * sc * 1.4);
+    c.beginPath(); c.moveTo(px - Math.cos(a) * h, py - Math.sin(a) * h); c.lineTo(px + Math.cos(a) * h, py + Math.sin(a) * h);
+    c.strokeStyle = k < C.next ? '#46e196' : '#ffb547'; c.lineWidth = 6; c.lineCap = 'round'; c.stroke();
+    c.fillStyle = '#fff'; c.font = '700 18px Archivo'; c.textAlign = 'center'; c.textBaseline = 'middle'; c.fillText(k + 1, px + r.n[1] * 0 + Math.cos(a + Math.PI / 2) * 0, py - h - 12); });
+  const [hx, hy] = w2(plan.home[1], plan.home[0]); c.beginPath(); c.arc(hx, hy, 12, 0, 7); c.fillStyle = '#1f6b52'; c.fill(); c.strokeStyle = '#fff'; c.lineWidth = 2; c.stroke();
+  c.fillStyle = '#fff'; c.font = '700 13px Archivo'; c.fillText('H', hx, hy + 1);
+  c.fillStyle = 'rgba(16,20,18,.75)'; c.fillRect(0, H - 54, W, 54); c.font = '600 15px JetBrains Mono'; c.textAlign = 'left';
+  [['#46e196', 'FLOWN'], ['#ffb547', 'MISSED'], ['rgba(255,255,255,.6)', 'RACING LINE']].forEach(([col, t], i) => { c.fillStyle = col; c.fillRect(20 + i * 170, H - 33, 14, 14); c.fillStyle = '#fff'; c.fillText(t, 42 + i * 170, H - 26); });
 }
 $('bFlyAuto').onclick = () => startFlight(true);
 $('bFlyManual').onclick = () => startFlight(false);
@@ -415,10 +606,11 @@ function frame(now) {
     F.acc += rdt * F.warp; let n = 0;
     while (F.acc >= DT && n < 4000) {
       s.step(DT, inp); F.acc -= DT; n++;
+      if (F.course) { const ev = F.course.check(F.prevP, s.p, s.t); F.prevP[0] = s.p[0]; F.prevP[1] = s.p[1]; F.prevP[2] = s.p[2]; if (ev) F.cevents.push(ev); }
       if (s.t >= F.nextCam) {
         F.nextCam += 0.1;
         if (s.mode !== 'DISARMED' && !s.crashed) {
-          const c = s.cameraAxes(90); F.cov.sample(s.p, c.f, c.r, c.d, L.terr, L.gsd);
+          const c = s.cameraAxes(90); if (F.cov) F.cov.sample(s.p, c.f, c.r, c.d, L.terr, L.gsd);
           const agl = s.agl(), dist = Math.hypot(s.p[0] - plan.home[0], s.p[1] - plan.home[1]);
           if (dist > VLOS) F.vlosT += 0.1; if (agl > CEIL) F.ceilT += 0.1;
           F.gsdNow = agl > 3 ? (agl * 0.001454 / Math.max(0.2, Math.cos(eulerFromQ(s.q)[0]) * Math.cos(eulerFromQ(s.q)[1]))) : null;
@@ -427,11 +619,19 @@ function frame(now) {
       }
       if (s.crashed || s.landed) break;
     }
-    ovT += rdt; if (ovT > 0.4 && F.cov.version !== F.lastOv) { ovT = 0; F.lastOv = F.cov.version; drawOverlay(F.cov, L.gsd); }
-    if ((s.crashed || s.landed) && !F.endTimer) F.endTimer = setTimeout(() => endFlight(s.crashed ? 'crash' : 'landed'), s.crashed ? 2200 : 1500);
+    if (F.course) { F.maxVa = Math.max(F.maxVa || 0, s.airspeed); while (F.cevents.length) onCourseEvent(F.cevents.shift());
+      if (s.landed && !s.crashed && !F.course.done) { s.landed = false; if (!F.groundMsg || s.t - F.groundMsg > 6) { F.groundMsg = s.t; toast(F.course.next ? `${F.course.rings.length - F.course.next} rings to go. SPACE to take off again` : 'Disarmed on the pad. SPACE to arm, hold R to climb', true); } } }
+    ovT += rdt; if (F.cov && ovT > 0.4 && F.cov.version !== F.lastOv) { ovT = 0; F.lastOv = F.cov.version; drawOverlay(F.cov, L.gsd); }
+    if ((s.crashed || s.landed) && !F.endTimer) F.endTimer = setTimeout(() => endFlight(s.crashed ? 'crash' : 'landed'), s.crashed ? 2200 : F.course ? 1800 : 1500);
   }
   // messages
-  while (F.msgSeen < s.msgs.length) { const m = s.msgs[F.msgSeen++]; toast(m.s, /CRASH|low|Stall/i.test(m.s)); }
+  while (F.msgSeen < s.msgs.length) { const m = s.msgs[F.msgSeen++]; if (F.course && /Course done/.test(m.s)) continue; toast(m.s, /CRASH|low|Stall/i.test(m.s)); if (/Battery low/.test(m.s)) audio.beep(); }
+  if (F.prevMode !== s.mode) {
+    if (s.mode === 'CRASHED') audio.crash();
+    else if (F.prevMode === 'DISARMED') audio.arm();
+    else if (s.mode === 'DISARMED') audio.landed();
+    F.prevMode = s.mode;
+  }
   // scene
   const M = placeModel(s);
   const p = n2t(s.p[0], s.p[1], s.p[2]);
@@ -450,6 +650,8 @@ function frame(now) {
     const want = new THREE.Vector3(p.x, Math.max(p.y + 380, 420), p.z + 0.01); cam.position.lerp(want, Math.min(1, 1 - Math.exp(-rdt * 3 * F.warp))); cam.fov = 55; cam.lookAt(p.x, gy, p.z);
   }
   cam.updateProjectionMatrix();
+  audio.update({ active: !F.over && !F.paused, lift: s.lift, push: s.push, armed: s.mode !== 'DISARMED' && s.mode !== 'CRASHED', airspeed: s.airspeed,
+    dist: F.cam === 2 ? 400 : cam.position.distanceTo(p), onboard: F.cam === 3 });
   // Walksnail camera (looking straight down from the belly, image top = nose)
   const c = s.cameraAxes(90), f = n2t(c.f[0], c.f[1], c.f[2]), up = n2t(-c.d[0], -c.d[1], -c.d[2]);
   pipCam.position.copy(p).add(f.clone().multiplyScalar(0.15)); pipCam.up.copy(up); pipCam.lookAt(pipCam.position.clone().add(f));
@@ -464,6 +666,7 @@ function frame(now) {
     renderer.render(scene, pipCam); renderer.setScissorTest(false); model.visible = true;
   }
   $('pip').style.display = F.cam !== 3 && W > 900 ? '' : 'none'; $('pipLbl').style.display = $('pip').style.display;
+  if (F.course) courseFrame(rdt, s);
   hud(s, e);
 }
 requestAnimationFrame(frame);
@@ -473,7 +676,7 @@ function hud(s, e) {
   const [m, sub] = MODE_TXT[s.mode] || [s.mode, ''];
   $('hMode').textContent = m;
   let subt = sub;
-  if (s.mode === 'AUTO') subt = s.autoStage === 'TAKEOFF' ? 'VTOL TAKEOFF' : s.trans < 1 ? 'TRANSITION' : 'SURVEY';
+  if (s.mode === 'AUTO') subt = s.autoStage === 'TAKEOFF' ? 'VTOL TAKEOFF' : s.trans < 1 ? 'TRANSITION' : F.course ? (F.demo ? 'DEMO LAP' : 'AUTOPILOT · NOT COUNTED') : 'SURVEY';
   if ((s.mode === 'FBWA' || s.mode === 'AUTO') && s.trans > 0 && s.trans < 1) subt = 'TRANSITIONING · ' + Math.round(s.trans * 100) + '%';
   if (s.landed) subt = 'LANDED';
   $('hModeSub').textContent = subt;
@@ -482,8 +685,9 @@ function hud(s, e) {
   $('hVs').textContent = (-s.v[2]).toFixed(1); $('hPw').textContent = Math.round(s.mode === 'DISARMED' ? 0 : s.power) + 'W'; $('hT').textContent = fmtT(s.t);
   const b = s.battPct(); $('hBatt').style.width = b * 100 + '%'; $('hBatt').style.background = b < 0.25 ? '#ff6b5b' : b < 0.45 ? '#ffc861' : '#8fe0b5';
   $('hBattTxt').textContent = Math.round(b * 100) + '% · ' + (AC.battWh - s.whUsed).toFixed(0) + ' Wh';
-  const cv = F.cov.fraction(L.gsd); $('hCov').textContent = (cv * 100).toFixed(1) + '%'; $('hCovBar').style.width = cv * 100 + '%';
-  $('hCovSub').textContent = `AT ${Math.round(L.gsd * 100)} CM/PX · GOAL ${Math.round(L.goal * 100)}%`;
+  if (F.course) hudCourse(s);
+  else { const cv = F.cov.fraction(L.gsd); $('hCov').textContent = (cv * 100).toFixed(1) + '%'; $('hCovBar').style.width = cv * 100 + '%';
+  $('hCovSub').textContent = `AT ${Math.round(L.gsd * 100)} CM/PX · GOAL ${Math.round(L.goal * 100)}%`; }
   const dist = Math.hypot(s.p[0] - plan.home[0], s.p[1] - plan.home[1]); $('hDist').textContent = Math.round(dist) + ' m'; $('hDist').style.color = dist > VLOS ? '#ff8b7b' : '';
   $('hLine').textContent = s.mission && s.wpIdx < s.mission.wps.length ? `${Math.floor(s.wpIdx / 2) + 1} / ${Math.ceil(s.mission.wps.length / 2)}` : '—';
   $('hGsd').textContent = F.gsdNow ? (F.gsdNow * 100).toFixed(1) + ' cm/px' : '—';
@@ -496,7 +700,9 @@ function hud(s, e) {
 
 // ======================= debrief =======================
 function endFlight(why) {
+  if (F && F.course && !F.over) return endCourse(why);
   if (!F || F.over) return; F.over = true; clearTimeout(F.endTimer);
+  $('dbRetry').textContent = 'Re-plan & retry'; $('dbNext').textContent = 'Next level ▸';
   const s = F.sim; drawOverlay(F.cov, L.gsd, true);
   const cov = F.cov.fraction(L.gsd), batt = s.battPct(), t = s.t;
   const crashed = !!s.crashed, landed = s.landed && !crashed;

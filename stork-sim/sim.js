@@ -276,7 +276,7 @@ export class Sim {
   l1(Va, a, b) {
     // L1 guidance along segment a->b (NE). returns lateral accel demand and progress
     const vel = this.vg, gs = Math.max(Math.hypot(vel[0], vel[1]), 5);
-    const L1 = Math.max(0.24 * 16 * gs, 30);
+    const L1 = Math.max(0.24 * (this.mission?.l1p ?? 16) * gs, this.mission?.l1p ? 22 : 30);
     const AB = [b[0] - a[0], b[1] - a[1]], ABl = Math.hypot(AB[0], AB[1]) || 1, u = [AB[0] / ABl, AB[1] / ABl];
     const AP = [this.p[0] - a[0], this.p[1] - a[1]];
     const along = AP[0] * u[0] + AP[1] * u[1], xt = AP[0] * u[1] - AP[1] * u[0];   // xt >0 : right of track? (N,E): cross = AP x u
@@ -330,8 +330,8 @@ export class Sim {
         const a = i === 0 ? [this.home[0], this.home[1]] : [wps[i - 1].N, wps[i - 1].E], b = [wps[i].N, wps[i].E];
         const g = this.l1(Va, a, b);
         const bank = clamp(Math.atan(g.acc / G), -AC.bankMax, AC.bankMax);
-        fw = { bank, climb: altHold(alt, 3), spd: M.spd || AC.vCruise };
-        if (g.along >= g.len - 2) { this.wpIdx++; if (this.wpIdx >= wps.length) { this.mode = 'QRTL'; this.msg('Survey complete — returning home'); } else if (this.wpIdx % 2 === 0) this.msg(`Line ${this.wpIdx / 2 + 1} of ${Math.ceil(wps.length / 2)}`); }
+        fw = { bank, climb: altHold(wps[i].alt ?? alt, 3), spd: M.spd || AC.vCruise };
+        if (g.along >= g.len - 2) { this.wpIdx++; if (this.wpIdx >= wps.length) { this.mode = 'QRTL'; this.msg(M.course ? 'Course done — returning to the pad' : 'Survey complete — returning home'); } else if (!M.course && this.wpIdx % 2 === 0) this.msg(`Line ${this.wpIdx / 2 + 1} of ${Math.ceil(wps.length / 2)}`); }
       }
       if (this.mode === 'QRTL') {
         const dN = this.home[0] - this.p[0], dE = this.home[1] - this.p[1], d = Math.hypot(dN, dE);
